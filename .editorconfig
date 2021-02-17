@@ -1,0 +1,23 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+# IntelliJ specific settings
+ij_formatter_tags_enabled =true
+ij_formatter_off_tag = @formatter:off
+ij_formatter_on_tag = @formatter:on
+
+[*.{java,kts}]
+# Set default charset
+charset = utf-8
+# 4 space indentation
+indent_style = space
+indent_size = 4
+# IntelliJ specific settings
+ij_continuation_indent_size = 8
+
