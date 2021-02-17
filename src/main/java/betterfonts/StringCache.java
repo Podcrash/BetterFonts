@@ -26,6 +26,8 @@ import java.awt.Font;
 import java.awt.Point;
 import java.text.Bidi;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL14;
 
 /**
  * The StringCache is the public interface for rendering of all Unicode strings using OpenType fonts. It caches the glyph layout
@@ -114,6 +116,9 @@ public class StringCache
      * nested elements is index by the digit value 0-9.
      */
     private final Glyph[][] digitGlyphs = new Glyph[4][];
+
+    private int cachedTexMinFilter, cachedTexMagFilter;
+    private float cachedTexMaxLevel, cachedTexLodBias;
 
     /** True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string. */
     private boolean digitGlyphsReady = false;
@@ -385,6 +390,33 @@ public class StringCache
         digitGlyphsReady = true;
     }
 
+    /** Save current mipmapping values */
+    private void saveMipmapping()
+    {
+        cachedTexMinFilter = oglService.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
+        cachedTexMagFilter = oglService.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
+        cachedTexMaxLevel = oglService.glGetTexParameterf(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL);
+        cachedTexLodBias = oglService.glGetTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS);
+    }
+
+    /** Disables mipmapping to render strings cause it's not properly implemented */
+    private void disableMipmapping()
+    {
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0);
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, 0);
+    }
+
+    /** Reset mipmapping to the saved values */
+    private void restoreMipmapping()
+    {
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, cachedTexMinFilter);
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, cachedTexMagFilter);
+        oglService.glTexParameterf(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, cachedTexMaxLevel);
+        oglService.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, cachedTexLodBias);
+    }
+
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
      * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
@@ -409,6 +441,12 @@ public class StringCache
         {
             return 0;
         }
+
+        /* Fix for vanilla mipmapping
+         * Easiest fix to not implement mip-mapping
+         * For some reasons if I put it somewhere else it disables mipmapping */
+        saveMipmapping();
+        disableMipmapping();
 
         /* Fix for what RenderLivingBase#setBrightness does */
         oglService.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
@@ -499,8 +537,12 @@ public class StringCache
                 tessellator.startDrawingQuads();
                 tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
+                restoreMipmapping(); // If I don't do this mipmapping gets completely disabled
+
                 oglService.glBindTexture(GL11.GL_TEXTURE_2D, texture.textureName);
                 boundTextureName = texture.textureName;
+
+                disableMipmapping(); // Re-disable it
             }
 
             /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
@@ -585,6 +627,7 @@ public class StringCache
             oglService.glEnable(GL11.GL_TEXTURE_2D);
         }
 
+        restoreMipmapping();
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
         return entry.advance / 2;

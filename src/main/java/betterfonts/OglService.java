@@ -19,7 +19,13 @@ public interface OglService {
 
     void glColor3f(float red, float green, float blue);
 
+    int glGetTexParameteri(int target, int pName);
+
     void glTexParameteri(int target, int pName, int param);
+
+    float glGetTexParameterf(int target, int pName);
+
+    void glTexParameterf(int target, int pName, float param);
 
     void glTexEnvi(int target, int pName, int param);
 
