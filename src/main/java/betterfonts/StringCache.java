@@ -472,6 +472,9 @@ public class StringCache
 
         /* Save the blending state */
         boolean wasBlendEnabled = oglService.glIsEnabled(GL11.GL_BLEND);
+        /* If the GL_BLEND is not enabled, ignore the alpha value. This fixes the problem with the scoreboard */
+        if(!wasBlendEnabled)
+            initialColor = 0xFF000000 | initialColor;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
