@@ -127,15 +127,6 @@ public class StringCache
     private boolean antiAliasEnabled = false;
 
     /**
-     * Reference to the main Minecraft thread that created this GlyphCache object. Starting with Minecraft 1.3.1, it is possible
-     * for GlyphCache.cacheGlyphs() to be invoked from the TcpReaderThread while processing a chat packet and computing the width
-     * of the incoming chat text. Unfortunately, if cacheGlyphs() makes any OpenGL calls from any thread except the main one,
-     * it will crash LWJGL with a NullPointerException. By remembering the initial thread and comparing it later against
-     * Thread.currentThread(), the StringCache code can avoid calling cacheGlyphs() when it's not safe to do so.
-     */
-    private final Thread mainThread;
-
-    /**
      * Wraps a String and acts as the key into stringCache. The hashCode() and equals() methods consider all ASCII digits
      * to be equal when hashing and comparing Key objects together. Therefore, Strings which only differ in their digits will
      * be all hashed together into the same entry. The renderString() method will then substitute the correct digit glyph on
@@ -361,8 +352,6 @@ public class StringCache
     public StringCache(OglService oglService, int[] colors)
     {
         this.oglService = oglService;
-        /* StringCache is created by the main game thread; remember it for later thread safety checks */
-        mainThread = Thread.currentThread();
 
         glyphCache = new GlyphCache(oglService);
         colorTable = colors;
@@ -851,7 +840,7 @@ public class StringCache
         Entry entry = null;
 
         /* Don't perform a cache lookup from other threads because the stringCache is not synchronized */
-        if(mainThread == Thread.currentThread())
+        if(oglService.isContextCurrent())
         {
             /* Re-use existing lookupKey to avoid allocation overhead on the critical rendering path */
             lookupKey.str = str;
@@ -888,7 +877,7 @@ public class StringCache
              * Do not actually sort by texture when called from other threads because GlyphCache.cacheGlyphs()
              * will not have been called and the cache entry does not contain any texture data needed for rendering.
              */
-            if (mainThread == Thread.currentThread()) {
+            if (oglService.isContextCurrent()) {
                 entry.sortedGlyphs = Arrays.copyOf(entry.glyphs, entry.glyphs.length);
                 Arrays.sort(entry.sortedGlyphs, Comparator.comparingInt(o -> o.texture.textureName));
             }
@@ -925,7 +914,7 @@ public class StringCache
              * Do not actually cache the string when called from other threads because GlyphCache.cacheGlyphs() will not have been called
              * and the cache entry does not contain any texture data needed for rendering.
              */
-            if(mainThread == Thread.currentThread())
+            if(oglService.isContextCurrent())
             {
                 /* Wrap the string in a Key object (to change how ASCII digits are compared) and cache it along with the newly generated Entry */
                 key = new Key();
@@ -939,7 +928,7 @@ public class StringCache
         }
 
         /* Do not access weakRefCache from other threads since it is un-synchronized, and for a newly created entry, the keyRef is null */
-        if(mainThread == Thread.currentThread())
+        if(oglService.isContextCurrent())
         {
             /*
              * Add the String passed into this method to the stringWeakMap so it keeps the Key reference live as long as the String is in use.
@@ -1269,7 +1258,7 @@ public class StringCache
          * cacheString() will also not insert the entry into the stringCache since it may be incomplete if lookupGlyph()
          * returns null for any glyphs not yet stored in the glyph cache.
          */
-        if(mainThread == Thread.currentThread())
+        if(oglService.isContextCurrent())
         {
             glyphCache.cacheGlyphs(font, text, start, limit, layoutFlags);
         }

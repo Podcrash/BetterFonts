@@ -11,6 +11,8 @@ import java.nio.IntBuffer;
  */
 public interface OglService {
 
+    boolean isContextCurrent();
+
     Tessellator tessellator();
 
     boolean glIsEnabled(int cap);
