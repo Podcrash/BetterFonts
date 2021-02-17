@@ -410,6 +410,9 @@ public class StringCache
             return 0;
         }
 
+        /* Fix for what RenderLivingBase#setBrightness does */
+        oglService.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
+
         /* Make sure the entire string is cached before rendering and return its glyph representation */
         Entry entry = cacheString(str);
 

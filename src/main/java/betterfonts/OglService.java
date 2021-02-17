@@ -21,6 +21,8 @@ public interface OglService {
 
     void glTexParameteri(int target, int pName, int param);
 
+    void glTexEnvi(int target, int pName, int param);
+
     void glBlendFunc(int sFactor, int dFactor);
 
     int glGenTextures();
