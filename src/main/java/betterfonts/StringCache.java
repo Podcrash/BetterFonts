@@ -470,12 +470,13 @@ public class StringCache
          */
         oglService.glColor3f(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff);
 
+        /* Save the blending state */
+        boolean wasBlendEnabled = oglService.glIsEnabled(GL11.GL_BLEND);
+
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
          * (so it can fade out), but not GUI text or signs. Minecraft uses multiple blend functions so it has to be specified here
-         * as well for consistent blending. To reduce the overhead of OpenGL state changes and making native LWJGL calls, this
-         * function doesn't try to save/restore the blending state. Hopefully everything else that depends on blending in Minecraft
-         * will set its own state as needed.
+         * as well for consistent blending.
          */
         if(antiAliasEnabled)
         {
@@ -626,6 +627,10 @@ public class StringCache
             tessellator.draw();
             oglService.glEnable(GL11.GL_TEXTURE_2D);
         }
+
+
+        if(antiAliasEnabled && !wasBlendEnabled)
+            oglService.glDisable(GL11.GL_BLEND);
 
         restoreMipmapping();
 

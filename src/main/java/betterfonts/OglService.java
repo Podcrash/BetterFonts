@@ -13,6 +13,8 @@ public interface OglService {
 
     Tessellator tessellator();
 
+    boolean glIsEnabled(int cap);
+
     void glEnable(int cap);
 
     void glDisable(int cap);
