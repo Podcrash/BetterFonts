@@ -49,9 +49,9 @@ import org.lwjgl.opengl.GL11;
  * behavior).
  *
  * @todo Should have a separate glyph cache and a separate smaller point size font for rendering the GUI at its smallest size
- * and for use in the F3 debug screen; may need some explicit argument in StringCache.renderString() to select the size
- * @todo Need to have a config file that allows overring the font search order by locale to properly support Traditional Chinese
- * hanzi, Simplified Chinese hanzi, Japanese kanji, and Korean hanja
+ *       and for use in the F3 debug screen; may need some explicit argument in StringCache.renderString() to select the size
+ * @todo Need to have a config file that allows overriding the font search order by locale to properly support Traditional Chinese
+ *       hanzi, Simplified Chinese hanzi, Japanese kanji, and Korean hanja
  */
 public class GlyphCache
 {
@@ -81,7 +81,7 @@ public class GlyphCache
     private static final int GLYPH_BORDER = 1;
 
     /** Transparent (alpha zero) white background color for use with BufferedImage.clearRect(). */
-    private static Color BACK_COLOR = new Color(255, 255, 255, 0);
+    private static final Color BACK_COLOR = new Color(255, 255, 255, 0);
 
     /** The point size at which every OpenType font is rendered. */
     private int fontSize = 18;
@@ -98,30 +98,30 @@ public class GlyphCache
 
 
     /** All font glyphs are packed inside this image and are then loaded from here into an OpenGL texture. */
-    private BufferedImage glyphCacheImage = new BufferedImage(TEXTURE_WIDTH, TEXTURE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage glyphCacheImage = new BufferedImage(TEXTURE_WIDTH, TEXTURE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
 
     /** The Graphics2D associated with glyphCacheImage and used for bit blitting between stringImage. */
-    private Graphics2D glyphCacheGraphics = glyphCacheImage.createGraphics();
+    private final Graphics2D glyphCacheGraphics = glyphCacheImage.createGraphics();
 
     /** Needed for all text layout operations that create GlyphVectors (maps point size to pixel size). */
-    private FontRenderContext fontRenderContext = glyphCacheGraphics.getFontRenderContext();
+    private final FontRenderContext fontRenderContext = glyphCacheGraphics.getFontRenderContext();
 
 
     /** Intermediate data array for use with textureImage.getRgb(). */
-    private int imageData[] = new int[TEXTURE_WIDTH * TEXTURE_HEIGHT];
+    private final int[] imageData = new int[TEXTURE_WIDTH * TEXTURE_HEIGHT];
 
     /**
      * A big-endian direct int buffer used with glTexSubImage2D() and glTexImage2D(). Used for loading the pre-rendered glyph
      * images from the glyphCacheImage BufferedImage into OpenGL textures. This buffer uses big-endian byte ordering to ensure
      * that the integers holding packed RGBA colors are stored into memory in a predictable order.
      */
-    private IntBuffer imageBuffer = ByteBuffer.allocateDirect(4 * TEXTURE_WIDTH * TEXTURE_HEIGHT).order(ByteOrder.BIG_ENDIAN).asIntBuffer();
+    private final IntBuffer imageBuffer = ByteBuffer.allocateDirect(4 * TEXTURE_WIDTH * TEXTURE_HEIGHT).order(ByteOrder.BIG_ENDIAN).asIntBuffer();
 
     /** A single integer direct buffer with native byte ordering used for returning values from glGenTextures(). */
-    private IntBuffer singleIntBuffer = GLAllocation.createDirectIntBuffer(1);
+    private final IntBuffer singleIntBuffer = GLAllocation.createDirectIntBuffer(1);
 
     /** List of all available physical fonts on the system. Used by lookupFont() to find alternate fonts. */
-    private List<Font> allFonts = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
+    private final List<Font> allFonts = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
 
     /**
      * A list of all fonts that have been returned so far by lookupFont(), and that will always be searched first for a usable font before
@@ -129,7 +129,7 @@ public class GlyphCache
      * have multiple entries for the various styles (i.e. bold, italic, etc.) of a font. This list starts with Java's "SansSerif" logical
      * font.
      */
-    private List<Font> usedFonts = new ArrayList();
+    private final List<Font> usedFonts = new ArrayList<>();
 
 
     /** ID of current OpenGL cache texture being used by cacheGlyphs() to store pre-rendered glyph images. */
@@ -140,19 +140,19 @@ public class GlyphCache
      * increasing) which forms the upper 32 bits of the key into the glyphCache map. This font cache can include different styles
      * of the same font family like bold or italic.
      */
-    private LinkedHashMap<Font, Integer> fontCache = new LinkedHashMap();
+    private final LinkedHashMap<Font, Integer> fontCache = new LinkedHashMap<>();
 
     /**
-     * A cache of pre-rendered glyphs mapping each glyph by its glyphcode to the position of its pre-rendered image within
-     * the cache texture. The key is a 64 bit number such that the lower 32 bits are the glyphcode and the upper 32 are the
+     * A cache of pre-rendered glyphs mapping each glyph by its glyph-code to the position of its pre-rendered image within
+     * the cache texture. The key is a 64 bit number such that the lower 32 bits are the glyph-code and the upper 32 are the
      * index of the font in the fontCache. This makes for a single globally unique number to identify any glyph from any font.
      */
-    private LinkedHashMap<Long, Entry> glyphCache = new LinkedHashMap();
+    private final LinkedHashMap<Long, Entry> glyphCache = new LinkedHashMap<>();
 
 
     /**
      * The X coordinate of the upper=left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
-     * always added left-to-right on the curren tline until it fills up, at which point they continue filling the texture on
+     * always added left-to-right on the current line until it fills up, at which point they continue filling the texture on
      * the next line.
      */
     private int cachePosX = GLYPH_BORDER;
@@ -199,11 +199,7 @@ public class GlyphCache
         public float v2;
     }
 
-    /**
-     * A single instance of GlyphCache is allocated for internal use by the StringCache class.
-     *
-     * @param renderEngine needed to allocate OpenGL textures
-     */
+    /** A single instance of GlyphCache is allocated for internal use by the StringCache class. */
     public GlyphCache()
     {
         /* Set background color for use with clearRect() */
@@ -249,7 +245,7 @@ public class GlyphCache
      * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT
      * @return the newly created GlyphVector
      */
-    GlyphVector layoutGlyphVector(Font font, char text[], int start, int limit, int layoutFlags)
+    GlyphVector layoutGlyphVector(Font font, char[] text, int start, int limit, int layoutFlags)
     {
         /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
         if(!fontCache.containsKey(font))
@@ -266,10 +262,10 @@ public class GlyphCache
      * @param text the string to check against the font
      * @param start the offset into text at which to start checking characters for being supported by a font
      * @param limit the (offset + length) at which to stop checking characters
-     * @param a combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
+     * @param style a combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
      * @return an OpenType font capable of displaying at least the first character at the start position in text
      */
-    Font lookupFont(char text[], int start, int limit, int style)
+    Font lookupFont(char[] text, int start, int limit, int style)
     {
         /* Try using an already known base font; the first font in usedFonts list is the one set with setDefaultFont() */
         Iterator<Font> iterator = usedFonts.iterator();
@@ -315,7 +311,7 @@ public class GlyphCache
      * to cacheGlyphs().
      *
      * @param font the font to which this glyphCode belongs and which was used to pre-render the glyph image in cacheGlyphs()
-     * @param glyphCode the font specific flyph code to lookup in the cache
+     * @param glyphCode the font specific glyph code to lookup in the cache
      * @return the cache entry for this font/glyphCode pair
      */
     Entry lookupGlyph(Font font, int glyphCode)
@@ -337,7 +333,7 @@ public class GlyphCache
      *
      * @todo May need a blank border of pixels around everything for mip-map/tri-linear filtering with Optifine
      */
-    void cacheGlyphs(Font font, char text[], int start, int limit, int layoutFlags)
+    void cacheGlyphs(Font font, char[] text, int start, int limit, int layoutFlags)
     {
         /* Create new GlyphVector so glyphs can be moved around (kerning workaround; see below) without affecting caller */
         GlyphVector vector = layoutGlyphVector(font, text, start, limit, layoutFlags);
@@ -365,8 +361,8 @@ public class GlyphCache
              * The only way to get glyph shapes with font hinting is to draw the entire glyph vector into a
              * temporary BufferedImage, and then bit blit the individual glyphs based on their bounding boxes
              * returned by the glyph vector. Although it is possible to call font.createGlyphVector() with an
-             * array of glyphcodes (and therefore render only a few glyphs at a time), this produces corrupted
-             * Davengari glyphs under Windows 7. The vectorRendered flag will draw the string at most one time.
+             * array of glyph-codes (and therefore render only a few glyphs at a time), this produces corrupted
+             * Devanagari glyphs under Windows 7. The vectorRendered flag will draw the string at most one time.
              */
             if(!vectorRendered)
             {
@@ -393,11 +389,11 @@ public class GlyphCache
                  */
                 vectorBounds = vector.getPixelBounds(fontRenderContext, 0, 0);
 
-                /* Enlage the stringImage if it is too small to store the entire rendered string */
+                /* Enlarge the stringImage if it is too small to store the entire rendered string */
                 if(stringImage == null || vectorBounds.width > stringImage.getWidth() || vectorBounds.height > stringImage.getHeight())
                 {
-                    int width = Math.max(vectorBounds.width, stringImage.getWidth());
-                    int height = Math.max(vectorBounds.height, stringImage.getHeight());
+                    int width = Math.max(vectorBounds.width, stringImage == null ? 0 : stringImage.getWidth());
+                    int height = Math.max(vectorBounds.height, stringImage == null ? 0 : stringImage.getHeight());
                     allocateStringImage(width, height);
                 }
 
@@ -510,7 +506,7 @@ public class GlyphCache
      *
      * @todo Add mip-mapping support here
      * @todo Test with bilinear texture interpolation and possibly add a 1 pixel transparent border around each glyph to avoid
-     * bleedover when interpolation is active or add a small "fudge factor" to the UV coordinates like already n FontRenderer
+     *       bleed-over when interpolation is active or add a small "fudge factor" to the UV coordinates like already n FontRenderer
      */
     private void updateTexture(Rectangle dirty)
     {
@@ -527,7 +523,7 @@ public class GlyphCache
     }
 
     /**
-     * Allocte and initialize a new BufferedImage and Graphics2D context for rendering strings into. May need to be called
+     * Allocate and initialize a new BufferedImage and Graphics2D context for rendering strings into. May need to be called
      * at runtime to re-allocate a bigger BufferedImage if cacheGlyphs() is called with a very long string.
      */
     private void allocateStringImage(int width, int height)
@@ -573,7 +569,7 @@ public class GlyphCache
         /* Initialize the background to all white but fully transparent. */
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-        /* Allocate new OpenGL texure */
+        /* Allocate new OpenGL texture */
         singleIntBuffer.clear();
         GLAllocation.generateTextureNames(singleIntBuffer);
         textureName = singleIntBuffer.get(0);
@@ -589,7 +585,7 @@ public class GlyphCache
         GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_ALPHA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0,
             GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
 
-        /* Explicitely disable mipmap support becuase updateTexture() will only update the base level 0 */
+        /* Explicitly disable mipmap support because updateTexture() will only update the base level 0 */
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
     }
