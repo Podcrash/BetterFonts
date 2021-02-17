@@ -21,6 +21,8 @@ public interface OglService {
 
     void glColor3f(float red, float green, float blue);
 
+    void glTranslatef(float x, float y, float z);
+
     int glGetTexParameteri(int target, int pName);
 
     void glTexParameteri(int target, int pName, int param);

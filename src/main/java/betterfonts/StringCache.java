@@ -446,7 +446,6 @@ public class StringCache
      *
      * @todo Add optional NumericShaper to replace ASCII digits with locale specific ones
      * @todo Add support for the "k" code which randomly replaces letters on each render (used only by splash screen)
-     * @todo Optimize the underline/strikethrough drawing to draw a single line for each run
      */
     public int renderString(String str, int startX, int startY, int initialColor, boolean shadowFlag)
     {
@@ -470,6 +469,9 @@ public class StringCache
 
         /* Adjust the baseline of the string because the startY coordinate in Minecraft is for the top of the string */
         startY += BASELINE_OFFSET;
+
+        /* Translate to the right coords */
+        oglService.glTranslatef(startX, startY, 0);
 
         /* Color currently selected by color code; reapplied to Tessellator instance after glBindTexture() */
         int color = initialColor;
@@ -564,11 +566,11 @@ public class StringCache
                 disableMipmapping(); // Re-disable it
             }
 
-            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-            float x1 = startX + (glyphX) / 2.0F;
-            float x2 = startX + (glyphX + texture.width) / 2.0F;
-            float y1 = startY + (glyph.y) / 2.0F;
-            float y2 = startY + (glyph.y + texture.height) / 2.0F;
+            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system */
+            float x1 = glyphX / 2.0F;
+            float x2 = (glyphX + texture.width) / 2.0F;
+            float y1 = glyph.y / 2.0F;
+            float y2 = (glyph.y + texture.height) / 2.0F;
 
             tessellator.addVertexWithUV(x1, y1, 0, texture.u1, texture.v1);
             tessellator.addVertexWithUV(x1, y2, 0, texture.u1, texture.v2);
@@ -590,6 +592,7 @@ public class StringCache
             tessellator.startDrawingQuads();
             tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
+            boolean isUnderlining = false, isStrikeThrough = false;
             for(int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++)
             {
                 /*
@@ -599,46 +602,23 @@ public class StringCache
                  */
                 while(colorIndex < entry.colors.length && entry.glyphs[glyphIndex].stringIndex >= entry.colors[colorIndex].stringIndex)
                 {
-                    color = applyColorCode(tessellator, entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
+                    if(!isUnderlining)
+                        color = applyColorCode(tessellator, entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
                     renderStyle = entry.colors[colorIndex].renderStyle;
                     colorIndex++;
                 }
 
                 /* Select the current glyph within this string for its layout position */
                 Glyph glyph = entry.glyphs[glyphIndex];
-
-                /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-                int glyphSpace = glyph.advance - glyph.texture.width;
+                boolean isLastGlyph = glyphIndex == entry.glyphs.length - 1;
 
                 /* Draw underline under glyph if the style is enabled */
-                if((renderStyle & ColorCode.UNDERLINE) != 0)
-                {
-                    /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
-                    float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
-                    float y1 = startY + (UNDERLINE_OFFSET) / 2.0F;
-                    float y2 = startY + (UNDERLINE_OFFSET + UNDERLINE_THICKNESS) / 2.0F;
-
-                    tessellator.addVertex(x1, y1, 0);
-                    tessellator.addVertex(x1, y2, 0);
-                    tessellator.addVertex(x2, y2, 0);
-                    tessellator.addVertex(x2, y1, 0);
-                }
-
-                /* Draw strikethrough in the middle of glyph if the style is enabled */
-                if((renderStyle & ColorCode.STRIKETHROUGH) != 0)
-                {
-                    /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
-                    float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
-                    float y1 = startY + (STRIKETHROUGH_OFFSET) / 2.0F;
-                    float y2 = startY + (STRIKETHROUGH_OFFSET + STRIKETHROUGH_THICKNESS) / 2.0F;
-
-                    tessellator.addVertex(x1, y1, 0);
-                    tessellator.addVertex(x1, y2, 0);
-                    tessellator.addVertex(x2, y2, 0);
-                    tessellator.addVertex(x2, y1, 0);
-                }
+                isUnderlining = drawLineOverGlyphs(tessellator, glyph, isLastGlyph,
+                        (renderStyle & ColorCode.UNDERLINE) != 0, isUnderlining,
+                        UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                isStrikeThrough = drawLineOverGlyphs(tessellator, glyph, isLastGlyph,
+                        (renderStyle & ColorCode.STRIKETHROUGH) != 0, isStrikeThrough,
+                        STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
             }
 
             /* Finish drawing the last strikethrough/underline segments */
@@ -650,10 +630,57 @@ public class StringCache
         if(antiAliasEnabled && !wasBlendEnabled)
             oglService.glDisable(GL11.GL_BLEND);
 
+        oglService.glTranslatef(-startX, -startY, 0);
+
         restoreMipmapping();
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
         return entry.advance / 2;
+    }
+
+    private boolean drawLineOverGlyphs(OglService.Tessellator tessellator,
+                                       Glyph glyph,
+                                       boolean isLastGlyph,
+                                       boolean shouldDrawLine,
+                                       boolean isAlreadyDrawingLine,
+                                       int offset, int thickness) {
+        /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
+        int glyphSpace = glyph.advance - glyph.texture.width;
+
+        if(shouldDrawLine)
+        {
+            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system */
+            float x1 = (glyph.x - glyphSpace) / 2.0F;
+            float x2 = (glyph.x + glyph.advance) / 2.0F;
+            float y1 = offset / 2.0F;
+            float y2 = (offset + thickness) / 2.0F;
+
+            if(!isAlreadyDrawingLine)
+            {
+                tessellator.addVertex(x1, y1, 0);
+                tessellator.addVertex(x1, y2, 0);
+                return true;
+            }
+            else if(isLastGlyph)
+            {
+                tessellator.addVertex(x2, y2, 0);
+                tessellator.addVertex(x2, y1, 0);
+                return false;
+            }
+        }
+        else if(isAlreadyDrawingLine)
+        {
+            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system */
+            float x1 = (glyph.x) / 2.0F;
+            float y1 = offset / 2.0F;
+            float y2 = (offset + thickness) / 2.0F;
+
+            tessellator.addVertex(x1, y2, 0);
+            tessellator.addVertex(x1, y1, 0);
+            return false;
+        }
+
+        return isAlreadyDrawingLine;
     }
 
     /**
