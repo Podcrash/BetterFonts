@@ -657,7 +657,11 @@ public class StringCache
                 }
             }
 
-            advance += glyphs[index].advance;
+            int nextAdvance = advance + glyphs[index].advance;
+            if (nextAdvance > width) // Prevents returning an additional char
+                break;
+
+            advance = nextAdvance;
             index++;
         }
 
