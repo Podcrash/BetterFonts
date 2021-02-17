@@ -635,7 +635,7 @@ public class StringCache
         restoreMipmapping();
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.advance / 2;
+        return Math.round(entry.advance / 2.0F);
     }
 
     private boolean drawLineOverGlyphs(OglService.Tessellator tessellator,
@@ -701,7 +701,7 @@ public class StringCache
         Entry entry = cacheString(str);
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.advance / 2;
+        return Math.round(entry.advance / 2.0F);
     }
 
     /**
