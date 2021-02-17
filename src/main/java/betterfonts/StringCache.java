@@ -630,7 +630,9 @@ public class StringCache
         }
 
         /* Convert the width from GUI coordinate system to pixels */
-        width += width;
+        width = width >= Integer.MAX_VALUE / 2 ? // Prevents crash when using values too big for width in sizeString
+                Integer.MAX_VALUE :
+                width + width;
 
         /* The glyph array for a string is sorted by the string's logical character position */
         Glyph[] glyphs = cacheString(str).glyphs;
