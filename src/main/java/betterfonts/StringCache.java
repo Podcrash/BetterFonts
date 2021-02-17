@@ -257,6 +257,9 @@ public class StringCache
         /** Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex) */
         public Glyph[] glyphs;
 
+        /** Array of fully layed out glyphs for the string. Sorted by texture */
+        public Glyph[] sortedGlyphs;
+
         /** Array of color code locations from the original string */
         public ColorCode[] colors;
 
@@ -273,6 +276,9 @@ public class StringCache
         /** Bit flag used with renderStyle to request the strikethrough style */
         public static final byte STRIKETHROUGH = 2;
 
+        /** Bit flag used with renderStyle to request the random style */
+        public static final byte RANDOM = 4;
+
         /** The index into the original string (i.e. with color codes) for the location of this color code. */
         public int stringIndex;
 
@@ -285,7 +291,7 @@ public class StringCache
         /** Combination of Font.PLAIN, Font.BOLD, and Font.ITALIC specifying font specific styles */
         public byte fontStyle;
 
-        /** Combination of UNDERLINE and STRIKETHROUGH flags specifying effects performed by renderString() */
+        /** Combination of UNDERLINE, STRIKETHROUGH and RANDOM  flags specifying effects performed by renderString() */
         public byte renderStyle;
 
         /**
@@ -322,6 +328,15 @@ public class StringCache
 
         /** Glyph's horizontal advance (in pixels) used for strikethrough and underline effects */
         public int advance;
+
+        /** The numeric color code (i.e. index into the colorCode[] array); -1 to reset default color */
+        public byte colorCode;
+
+        /** Combination of Font.PLAIN, Font.BOLD, and Font.ITALIC specifying font specific styles */
+        public byte fontStyle;
+
+        /** Combination of UNDERLINE, STRIKETHROUGH and RANDOM flags specifying effects performed by renderString() */
+        public byte renderStyle;
 
         /**
          * Allows arrays of Glyph objects to be sorted. Performs numeric comparison on stringIndex.
@@ -431,7 +446,6 @@ public class StringCache
      *
      * @todo Add optional NumericShaper to replace ASCII digits with locale specific ones
      * @todo Add support for the "k" code which randomly replaces letters on each render (used only by splash screen)
-     * @todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
      * @todo Optimize the underline/strikethrough drawing to draw a single line for each run
      */
     public int renderString(String str, int startX, int startY, int initialColor, boolean shadowFlag)
@@ -492,28 +506,23 @@ public class StringCache
         tessellator.startDrawingQuads();
         tessellator.setColorRGBA(color);
 
-        /* The currently active font syle is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = Font.PLAIN;
-
-        for(int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++)
+        for(int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.sortedGlyphs.length; glyphIndex++)
         {
-            /*
-             * If the original string had a color code at this glyph's position, then change the current GL color that gets added
-             * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
-             * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
-             * in which case only the last such color code takes effect.
-             */
-            while(colorIndex < entry.colors.length && entry.glyphs[glyphIndex].stringIndex >= entry.colors[colorIndex].stringIndex)
-            {
-                color = applyColorCode(tessellator, entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
-                fontStyle = entry.colors[colorIndex].fontStyle;
-                colorIndex++;
-            }
-
             /* Select the current glyph's texture information and horizontal layout position within this string */
-            Glyph glyph = entry.glyphs[glyphIndex];
+            Glyph glyph = entry.sortedGlyphs[glyphIndex];
             GlyphCache.Entry texture = glyph.texture;
             int glyphX = glyph.x;
+
+            /*
+             * Apply the latest color code found before this glyph.
+             * Note that only the RGB component of the color is replaced by a color code; the alpha component
+             * of the original color passed into this function will remain.
+             */
+            color = applyColorCode(tessellator, glyph.colorCode, initialColor, shadowFlag);
+            /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
+            int fontStyle = glyph.fontStyle;
+            /* The currently active render style is needed to replace the character with a random one if randomStyle is active */
+            int renderStyle = glyph.renderStyle;
 
             /*
              * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
@@ -528,6 +537,12 @@ public class StringCache
                 texture = digitGlyphs[fontStyle][c - '0'].texture;
                 int newWidth = texture.width;
                 glyphX += (oldWidth - newWidth) >> 1;
+            }
+
+            /* Replace character with random one */
+            if((renderStyle & ColorCode.RANDOM) != 0)
+            {
+                // TODO: random
             }
 
             /*
@@ -842,8 +857,18 @@ public class StringCache
              */
             Arrays.sort(entry.glyphs);
 
+            /*
+             * Do not actually sort by texture when called from other threads because GlyphCache.cacheGlyphs()
+             * will not have been called and the cache entry does not contain any texture data needed for rendering.
+             */
+            if (mainThread == Thread.currentThread()) {
+                entry.sortedGlyphs = Arrays.copyOf(entry.glyphs, entry.glyphs.length);
+                Arrays.sort(entry.sortedGlyphs, Comparator.comparingInt(o -> o.texture.textureName));
+            }
+
             /* Do some post-processing on each Glyph object */
             int colorIndex = 0, shift = 0;
+            byte colorCode = -1, fontStyle = Font.PLAIN, renderStyle = 0;
             for(int glyphIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++)
             {
                 Glyph glyph = entry.glyphs[glyphIndex];
@@ -856,9 +881,16 @@ public class StringCache
                  */
                 while(colorIndex < entry.colors.length && glyph.stringIndex + shift >= entry.colors[colorIndex].stringIndex)
                 {
+                    colorCode = entry.colors[colorIndex].colorCode;
+                    fontStyle = entry.colors[colorIndex].fontStyle;
+                    renderStyle = entry.colors[colorIndex].renderStyle;
                     shift += 2;
                     colorIndex++;
                 }
+
+                glyph.colorCode = colorCode;
+                glyph.fontStyle = fontStyle;
+                glyph.renderStyle = renderStyle;
                 glyph.stringIndex += shift;
             }
 
@@ -933,8 +965,8 @@ public class StringCache
             int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(str.charAt(next + 1)));
             switch(code)
             {
-                /* Random style; TODO: NOT IMPLEMENTED YET */
                 case 16:
+                    renderStyle |= ColorCode.RANDOM;
                     break;
 
                 /* Bold style */
