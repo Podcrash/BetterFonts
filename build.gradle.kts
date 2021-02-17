@@ -2,6 +2,10 @@ plugins {
     java
 }
 
+tasks.withType<Wrapper>().configureEach {
+    gradleVersion = "6.7"
+}
+
 group = "betterfonts"
 version = "1.0"
 
