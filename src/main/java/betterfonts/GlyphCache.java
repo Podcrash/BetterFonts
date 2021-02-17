@@ -19,7 +19,6 @@
 
 package betterfonts;
 
-import net.minecraft.src.GLAllocation;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
@@ -89,6 +88,8 @@ public class GlyphCache
     /** If true, then enble anti-aliasing when rendering the font glyph */
     private boolean antiAliasEnabled = false;
 
+    /** Service used to make OpenGL calls */
+    private final OglService oglService;
 
     /** Temporary image for rendering a string to and then extracting the glyph images from. */
     private BufferedImage stringImage;
@@ -116,9 +117,6 @@ public class GlyphCache
      * that the integers holding packed RGBA colors are stored into memory in a predictable order.
      */
     private final IntBuffer imageBuffer = ByteBuffer.allocateDirect(4 * TEXTURE_WIDTH * TEXTURE_HEIGHT).order(ByteOrder.BIG_ENDIAN).asIntBuffer();
-
-    /** A single integer direct buffer with native byte ordering used for returning values from glGenTextures(). */
-    private final IntBuffer singleIntBuffer = GLAllocation.createDirectIntBuffer(1);
 
     /** List of all available physical fonts on the system. Used by lookupFont() to find alternate fonts. */
     private final List<Font> allFonts = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
@@ -200,8 +198,9 @@ public class GlyphCache
     }
 
     /** A single instance of GlyphCache is allocated for internal use by the StringCache class. */
-    public GlyphCache()
+    public GlyphCache(OglService oglService)
     {
+        this.oglService = oglService;
         /* Set background color for use with clearRect() */
         glyphCacheGraphics.setBackground(BACK_COLOR);
 
@@ -516,8 +515,8 @@ public class GlyphCache
             /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
             updateImageBuffer(dirty.x, dirty.y, dirty.width, dirty.height);
 
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureName);
-            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, dirty.x, dirty.y, dirty.width, dirty.height,
+            oglService.glBindTexture(GL11.GL_TEXTURE_2D, textureName);
+            oglService.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, dirty.x, dirty.y, dirty.width, dirty.height,
                 GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
         }
     }
@@ -570,9 +569,7 @@ public class GlyphCache
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
         /* Allocate new OpenGL texture */
-        singleIntBuffer.clear();
-        GLAllocation.generateTextureNames(singleIntBuffer);
-        textureName = singleIntBuffer.get(0);
+        textureName = oglService.glGenTextures();
 
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
@@ -581,13 +578,13 @@ public class GlyphCache
          * Initialize texture with the now cleared BufferedImage. Using a texture with GL_ALPHA8 internal format may result in
          * faster rendering since the GPU has to only fetch 1 byte per texel instead of 4 with a regular RGBA texture.
          */
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureName);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_ALPHA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0,
+        oglService.glBindTexture(GL11.GL_TEXTURE_2D, textureName);
+        oglService.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_ALPHA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0,
             GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
 
         /* Explicitly disable mipmap support because updateTexture() will only update the base level 0 */
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
     }
 
     /**

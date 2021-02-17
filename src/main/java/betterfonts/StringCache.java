@@ -19,8 +19,6 @@
 
 package betterfonts;
 
-import net.minecraft.src.RenderEngine;
-import net.minecraft.src.Tessellator;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.awt.font.GlyphVector;
@@ -57,6 +55,7 @@ import org.lwjgl.opengl.GL11;
  *                                                                           ---> Glyph("B") ----------> GlyphCache.Entry("B")
  * </pre>
  */
+@SuppressWarnings("unused")
 public class StringCache
 {
     /** Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline */
@@ -76,6 +75,9 @@ public class StringCache
 
     /** Reference to the unicode.FontRenderer class. Needed for creating GlyphVectors and retrieving glyph texture coordinates. */
     private final GlyphCache glyphCache;
+
+    /** Service used to make OpenGL calls */
+    private final OglService oglService;
 
     /**
      * Color codes from original FontRender class. First 16 entries are the primary chat colors; second 16 are darker versions
@@ -336,12 +338,13 @@ public class StringCache
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    public StringCache(int[] colors)
+    public StringCache(OglService oglService, int[] colors)
     {
+        this.oglService = oglService;
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
         mainThread = Thread.currentThread();
 
-        glyphCache = new GlyphCache();
+        glyphCache = new GlyphCache(oglService);
         colorTable = colors;
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
@@ -376,9 +379,9 @@ public class StringCache
         /* Need to cache each font style combination; the digitGlyphsReady = false disabled the normal glyph substitution mechanism */
         digitGlyphsReady = false;
         digitGlyphs[Font.PLAIN] = cacheString("0123456789").glyphs;
-        digitGlyphs[Font.BOLD] = cacheString("�l0123456789").glyphs; // TODO
-        digitGlyphs[Font.ITALIC] = cacheString("�o0123456789").glyphs;
-        digitGlyphs[Font.BOLD | Font.ITALIC] = cacheString("�l�o0123456789").glyphs;
+        digitGlyphs[Font.BOLD] = cacheString("\u00A7l0123456789").glyphs; // TODO
+        digitGlyphs[Font.ITALIC] = cacheString("\u00A7o0123456789").glyphs;
+        digitGlyphs[Font.BOLD | Font.ITALIC] = cacheString("\u00A7l\u00A7o0123456789").glyphs;
         digitGlyphsReady = true;
     }
 
@@ -424,7 +427,7 @@ public class StringCache
          * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
          */
-        GL11.glColor3f(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff);
+        oglService.glColor3f(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff);
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -435,14 +438,14 @@ public class StringCache
          */
         if(antiAliasEnabled)
         {
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            oglService.glEnable(GL11.GL_BLEND);
+            oglService.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
 
         /* Using the Tessellator to queue up data in a vertex array and then draw all at once should be faster than immediate mode */
-        Tessellator tessellator = Tessellator.instance;
+        OglService.Tessellator tessellator = oglService.tessellator();
         tessellator.startDrawingQuads();
-        tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
+        tessellator.setColorRGBA(color);
 
         /* The currently active font syle is needed to select the proper ASCII digit style for fast replacement */
         int fontStyle = Font.PLAIN;
@@ -457,7 +460,7 @@ public class StringCache
              */
             while(colorIndex < entry.colors.length && entry.glyphs[glyphIndex].stringIndex >= entry.colors[colorIndex].stringIndex)
             {
-                color = applyColorCode(entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
+                color = applyColorCode(tessellator, entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
                 fontStyle = entry.colors[colorIndex].fontStyle;
                 colorIndex++;
             }
@@ -493,7 +496,7 @@ public class StringCache
                 tessellator.startDrawingQuads();
                 tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.textureName);
+                oglService.glBindTexture(GL11.GL_TEXTURE_2D, texture.textureName);
                 boundTextureName = texture.textureName;
             }
 
@@ -519,7 +522,7 @@ public class StringCache
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             color = initialColor;
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
+            oglService.glDisable(GL11.GL_TEXTURE_2D);
             tessellator.startDrawingQuads();
             tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
@@ -532,7 +535,7 @@ public class StringCache
                  */
                 while(colorIndex < entry.colors.length && entry.glyphs[glyphIndex].stringIndex >= entry.colors[colorIndex].stringIndex)
                 {
-                    color = applyColorCode(entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
+                    color = applyColorCode(tessellator, entry.colors[colorIndex].colorCode, initialColor, shadowFlag);
                     renderStyle = entry.colors[colorIndex].renderStyle;
                     colorIndex++;
                 }
@@ -576,7 +579,7 @@ public class StringCache
 
             /* Finish drawing the last strikethrough/underline segments */
             tessellator.draw();
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            oglService.glEnable(GL11.GL_TEXTURE_2D);
         }
 
 
@@ -707,7 +710,7 @@ public class StringCache
      * @param shadowFlag ir true, the color code will select a darker version of the color suitable for drop shadows
      * @return the new RGBA color set by this function
      */
-    private int applyColorCode(int colorCode, int color, boolean shadowFlag)
+    private int applyColorCode(OglService.Tessellator tessellator, int colorCode, int color, boolean shadowFlag)
     {
         /* A -1 color code indicates a reset to the initial color passed into renderString() */
         if(colorCode != -1)
@@ -716,7 +719,7 @@ public class StringCache
             color = colorTable[colorCode] & 0xffffff | color & 0xff000000;
         }
 
-        Tessellator.instance.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
+        tessellator.setColorRGBA(color);
         return color;
     }
 
