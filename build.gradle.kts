@@ -1,5 +1,6 @@
 plugins {
-    java
+    `java-library`
+    `maven-publish`
 }
 
 tasks.withType<Wrapper>().configureEach {
@@ -12,6 +13,13 @@ version = "1.0"
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType<Javadoc> {
+    isFailOnError = false
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -47,4 +55,26 @@ dependencies {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+publishing {
+    repositories {
+        if (!project.version.toString().contains("SNAPSHOT") &&
+            project.ext.has("podcrashMavenUsername") &&
+            project.ext.has("podcrashMavenPassword")
+        ) {
+            maven {
+                setUrl("https://maven.podcrash.com/repository/plus")
+                credentials {
+                    username = project.ext.get("podcrashMavenUsername") as String?
+                    password = project.ext.get("podcrashMavenPassword") as String?
+                }
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
 }
