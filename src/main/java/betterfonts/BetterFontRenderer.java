@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 @SuppressWarnings("unused")
@@ -34,9 +35,6 @@ public class BetterFontRenderer implements Constants
     /** Service used to make OpenGL calls */
     private final OglService oglService;
 
-    /** Factory used to create Font objects */
-    private final FontFactory fontFactory;
-
     /** Cache used to lookup which fonts to use for rendering */
     private final FontCache fontCache;
 
@@ -59,7 +57,7 @@ public class BetterFontRenderer implements Constants
     private float cachedTexMaxLevel, cachedTexLodBias;
 
     /** If true, then enable GL_BLEND in renderString() so anti-aliasing font glyphs show up properly. */
-    private boolean antiAliasEnabled = false;
+    private final boolean antiAliasEnabled;
 
     /**
      * A single BetterFontRenderer object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -68,38 +66,18 @@ public class BetterFontRenderer implements Constants
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    public BetterFontRenderer(OglService oglService, int[] colors)
+    BetterFontRenderer(OglService oglService, OpenTypeGlyphCache openTypeGlyphCache, int[] colors, List<Font> fonts, boolean antiAlias)
     {
         this.oglService = oglService;
         this.colorTable = colors;
 
-        this.openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
-        this.fontFactory = new FontFactory()
-        {
-            @Override
-            public Font createOpenType(java.awt.Font font)
-            {
-                return new OpenTypeFont(oglService, openTypeGlyphCache, font);
-            }
-
-            @Override
-            public Font createOpenType(String name, int size)
-            {
-                return new OpenTypeFont(oglService, openTypeGlyphCache, new java.awt.Font(name, java.awt.Font.PLAIN, size));
-            }
-        };
-        this.fontCache = new FontCache(fontFactory);
+        this.openTypeGlyphCache = openTypeGlyphCache;
+        this.fontCache = new FontCache(fonts);
         this.stringCache = new StringCache(oglService, fontCache);
-    }
-
-    public void setDefaultFont(String name, int size, boolean antiAlias)
-    {
-        fontCache.setDefaultFont(fontFactory.createOpenType(name, size));
-        /* Clear the string cache so all strings have to be re-layed out and re-rendered */
-        stringCache.invalidate();
 
         this.antiAliasEnabled = antiAlias;
-        openTypeGlyphCache.setAntiAlias(antiAlias);
+        if(openTypeGlyphCache != null)
+            openTypeGlyphCache.setAntiAlias(antiAlias);
     }
 
     /**

@@ -77,6 +77,16 @@ public interface Font
      * Creates a new Font object by replicating this Font object and applying a new style and size.
      *
      * @param style the style for the new Font
+     * @return a new Font object.
+     */
+    default Font deriveFont(int style) {
+        return deriveFont(style, getSize());
+    }
+
+    /**
+     * Creates a new Font object by replicating this Font object and applying a new style and size.
+     *
+     * @param style the style for the new Font
      * @param size the size for the new Font
      * @return a new Font object.
      */
