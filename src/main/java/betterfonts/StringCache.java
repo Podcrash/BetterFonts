@@ -536,7 +536,15 @@ public class StringCache
             if(c >= '0' && c <= '9')
             {
                 int oldWidth = texture.width;
-                texture = digitGlyphs[fontStyle][c - '0'].texture;
+                texture = digitGlyphs[fontStyle][(c - '0')].texture;
+
+                /* In case it failed the first time */
+                if(texture == null)
+                {
+                    cacheDigitGlyphs();
+                    texture = digitGlyphs[fontStyle][(c - '0')].texture;
+                }
+
                 int newWidth = texture.width;
                 glyphX += (oldWidth - newWidth) >> 1;
             }
