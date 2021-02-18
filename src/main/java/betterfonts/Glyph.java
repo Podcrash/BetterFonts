@@ -12,14 +12,17 @@ class Glyph implements Comparable<Glyph> {
     /** Texture ID and position/size of the glyph's pre-rendered image within the cache texture. */
     public GlyphTexture texture;
 
+    /** Scale factor to apply to the texture's with and height */
+    public float textureScale;
+
     /** Glyph's horizontal position (in pixels) relative to the entire string's baseline */
-    public int x;
+    public float x;
 
     /** Glyph's vertical position (in pixels) relative to the entire string's baseline */
-    public int y;
+    public float y;
 
     /** Glyph's horizontal advance (in pixels) used for strikethrough and underline effects */
-    public int advance;
+    public float advance;
 
     /** The numeric color code (i.e. index into the colorCode[] array); -1 to reset default color */
     public byte colorCode;

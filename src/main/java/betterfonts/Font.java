@@ -71,7 +71,7 @@ public interface Font
      *
      * @todo need to adjust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
-    int layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance);
+    float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance);
 
     /**
      * Creates a new Font object by replicating this Font object and applying a new style and size.

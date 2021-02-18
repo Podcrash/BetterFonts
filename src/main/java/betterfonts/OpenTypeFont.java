@@ -5,7 +5,7 @@ import java.awt.font.GlyphVector;
 import java.util.List;
 import java.util.Objects;
 
-class OpenTypeFont implements Font
+class OpenTypeFont implements Font, Constants
 {
     /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
     private final OpenTypeGlyphCache glyphCache;
@@ -48,7 +48,7 @@ class OpenTypeFont implements Font
     }
 
     @Override
-    public int layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance)
+    public float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance)
     {
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
@@ -74,12 +74,12 @@ class OpenTypeFont implements Font
         int numGlyphs = vector.getNumGlyphs();
         for(int index = 0; index < numGlyphs; index++)
         {
-            Point position = vector.getGlyphPixelBounds(index, null, advance, 0).getLocation();
+            Point position = vector.getGlyphPixelBounds(index, null, advance / MINECRAFT_SCALE_FACTOR, 0).getLocation();
 
             /* Compute horizontal advance for the previous glyph based on this glyph's position */
             if(glyph != null)
             {
-                glyph.advance = position.x - glyph.x;
+                glyph.advance = (position.x * MINECRAFT_SCALE_FACTOR) - glyph.x;
             }
 
             /*
@@ -89,13 +89,15 @@ class OpenTypeFont implements Font
             glyph = new Glyph();
             glyph.stringIndex = start + vector.getGlyphCharIndex(index);
             glyph.texture = glyphCache.lookupGlyph(font, vector.getGlyphCode(index));
-            glyph.x = position.x;
-            glyph.y = position.y;
+            /* The MINECRAFT_SCALE_FACTOR is needed to align with the scaled GUI coordinate system */
+            glyph.textureScale = MINECRAFT_SCALE_FACTOR;
+            glyph.x = position.x * MINECRAFT_SCALE_FACTOR;
+            glyph.y = position.y * MINECRAFT_SCALE_FACTOR;
             glyphList.add(glyph);
         }
 
         /* Compute the advance position of the last glyph (or only glyph) since it can't be done by the above loop */
-        advance += (int) vector.getGlyphPosition(numGlyphs).getX();
+        advance += (vector.getGlyphPosition(numGlyphs).getX() * MINECRAFT_SCALE_FACTOR);
         if(glyph != null)
         {
             glyph.advance = advance - glyph.x;

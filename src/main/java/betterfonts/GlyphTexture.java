@@ -10,10 +10,10 @@ class GlyphTexture
     public int textureName;
 
     /** The width in pixels of the glyph image. */
-    public int width;
+    public float width;
 
     /** The height in pixels of the glyph image. */
-    public int height;
+    public float height;
 
     /** The horizontal texture coordinate of the upper-left corner. */
     public float u1;

@@ -8,22 +8,19 @@ import java.util.Arrays;
 import java.util.Random;
 
 @SuppressWarnings("unused")
-public class BetterFontRenderer
+public class BetterFontRenderer implements Constants
 {
-    /** Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline */
-    private static final int BASELINE_OFFSET = 7;
-
     /** Offset from the string's baseline as which to draw the underline (in pixels) */
-    private static final int UNDERLINE_OFFSET = 1;
+    private static final float UNDERLINE_OFFSET = 1 * MINECRAFT_SCALE_FACTOR;
 
     /** Thickness of the underline (in pixels) */
-    private static final int UNDERLINE_THICKNESS = 2;
+    private static final float UNDERLINE_THICKNESS = 2 * MINECRAFT_SCALE_FACTOR;
 
     /** Offset from the string's baseline as which to draw the strikethrough line (in pixels) */
-    private static final int STRIKETHROUGH_OFFSET = -6;
+    private static final float STRIKETHROUGH_OFFSET = -6 * MINECRAFT_SCALE_FACTOR;
 
     /** Thickness of the strikethrough line (in pixels) */
-    private static final int STRIKETHROUGH_THICKNESS = 2;
+    private static final float STRIKETHROUGH_THICKNESS = 2 * MINECRAFT_SCALE_FACTOR;
 
     /* Characters that are supported by the RANDOM render style. This is pre-sorted to allow being binarySearched */
     private static final char[] RANDOM_STYLE_CHARS;
@@ -140,7 +137,7 @@ public class BetterFontRenderer
         StringCache.Entry entry = stringCache.cacheString(str);
 
         /* Adjust the baseline of the string because the startY coordinate in Minecraft is for the top of the string */
-        startY += BASELINE_OFFSET;
+        startY += MINECRAFT_BASELINE_OFFSET;
 
         /* Translate to the right coords */
         oglService.glTranslatef(startX, startY, 0);
@@ -185,7 +182,7 @@ public class BetterFontRenderer
             /* Select the current glyph's texture information and horizontal layout position within this string */
             Glyph glyph = entry.sortedGlyphs[glyphIndex];
             GlyphTexture texture = glyph.texture;
-            int glyphX = glyph.x;
+            float glyphX = glyph.x;
 
             /*
              * Apply the latest color code found before this glyph.
@@ -207,7 +204,7 @@ public class BetterFontRenderer
             char c = str.charAt(glyph.stringIndex);
             if(c >= '0' && c <= '9')
             {
-                int oldWidth = texture.width;
+                int oldWidth = Math.round(texture.width * glyph.textureScale);
                 texture = stringCache.digitGlyphs[fontStyle][(c - '0')].texture;
 
                 /* In case it failed the first time */
@@ -217,7 +214,7 @@ public class BetterFontRenderer
                     texture = stringCache.digitGlyphs[fontStyle][(c - '0')].texture;
                 }
 
-                int newWidth = texture.width;
+                int newWidth = Math.round(texture.width * glyph.textureScale);
                 glyphX += (oldWidth - newWidth) >> 1;
             }
 
@@ -256,11 +253,10 @@ public class BetterFontRenderer
                 disableMipmapping(); // Re-disable it
             }
 
-            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system */
-            float x1 = glyphX / 2.0F;
-            float x2 = (glyphX + texture.width) / 2.0F;
-            float y1 = glyph.y / 2.0F;
-            float y2 = (glyph.y + texture.height) / 2.0F;
+            float x1 = glyphX;
+            float x2 = glyphX + texture.width * glyph.textureScale;
+            float y1 = glyph.y;
+            float y2 = glyph.y + texture.height * glyph.textureScale;
 
             tessellator.addVertexWithUV(x1, y1, 0, texture.u1, texture.v1);
             tessellator.addVertexWithUV(x1, y2, 0, texture.u1, texture.v2);
@@ -325,25 +321,25 @@ public class BetterFontRenderer
         restoreMipmapping();
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return Math.round(entry.advance / 2.0F);
+        return Math.round(entry.advance);
     }
 
+    @SuppressWarnings("UnnecessaryLocalVariable")
     private boolean drawLineOverGlyphs(OglService.Tessellator tessellator,
                                        Glyph glyph,
                                        boolean isLastGlyph,
                                        boolean shouldDrawLine,
                                        boolean isAlreadyDrawingLine,
-                                       int offset, int thickness) {
+                                       float offset, float thickness) {
         /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-        int glyphSpace = glyph.advance - glyph.texture.width;
+        float glyphSpace = glyph.advance - glyph.texture.width * glyph.textureScale;
 
         if(shouldDrawLine)
         {
-            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system */
-            float x1 = (glyph.x - glyphSpace) / 2.0F;
-            float x2 = (glyph.x + glyph.advance) / 2.0F;
-            float y1 = offset / 2.0F;
-            float y2 = (offset + thickness) / 2.0F;
+            float x1 = glyph.x - glyphSpace;
+            float x2 = glyph.x + glyph.advance;
+            float y1 = offset;
+            float y2 = offset + thickness;
 
             if(!isAlreadyDrawingLine)
             {
@@ -360,10 +356,9 @@ public class BetterFontRenderer
         }
         else if(isAlreadyDrawingLine)
         {
-            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system */
-            float x1 = (glyph.x) / 2.0F;
-            float y1 = offset / 2.0F;
-            float y2 = (offset + thickness) / 2.0F;
+            float x1 = glyph.x;
+            float y1 = offset;
+            float y2 = offset + thickness;
 
             tessellator.addVertex(x1, y2, 0);
             tessellator.addVertex(x1, y1, 0);
@@ -391,7 +386,7 @@ public class BetterFontRenderer
         StringCache.Entry entry = stringCache.cacheString(str);
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return Math.round(entry.advance / 2.0F);
+        return Math.round(entry.advance);
     }
 
     /**
@@ -412,11 +407,6 @@ public class BetterFontRenderer
             return 0;
         }
 
-        /* Convert the width from GUI coordinate system to pixels */
-        width = width >= Integer.MAX_VALUE / 2 ? // Prevents crash when using values too big for width in sizeString
-                Integer.MAX_VALUE :
-                width + width;
-
         /* The glyph array for a string is sorted by the string's logical character position */
         Glyph[] glyphs = stringCache.cacheString(str).glyphs;
 
@@ -424,7 +414,8 @@ public class BetterFontRenderer
         int wsIndex = -1;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
-        int advance = 0, index = 0;
+        float advance = 0;
+        int index = 0;
         while(index < glyphs.length && advance <= width)
         {
             /* Keep track of spaces if breakAtSpaces it set */
@@ -442,8 +433,8 @@ public class BetterFontRenderer
                 }
             }
 
-            int nextAdvance = advance + glyphs[index].advance;
-            if (nextAdvance > width) // Prevents returning an additional char
+            float nextAdvance = advance + glyphs[index].advance;
+            if(nextAdvance > width) // Prevents returning an additional char
                 break;
 
             advance = nextAdvance;

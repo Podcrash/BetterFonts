@@ -209,7 +209,7 @@ class StringCache
         public WeakReference<Key> keyRef;
 
         /** The total horizontal advance (i.e. width) for this string in pixels. */
-        public int advance;
+        public float advance;
 
         /** Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex) */
         public Glyph[] glyphs;
@@ -542,9 +542,9 @@ class StringCache
      * @param limit the (offset + length) at which to stop performing the layout
      * @return the total advance (horizontal distance) of this string
      */
-    private int layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, ColorCode[] colors)
+    private float layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, ColorCode[] colors)
     {
-        int advance = 0;
+        float advance = 0;
 
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
         if(Bidi.requiresBidi(text, start, limit))
@@ -599,7 +599,7 @@ class StringCache
         }
     }
 
-    private int layoutStyle(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance, ColorCode[] colors)
+    private float layoutStyle(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, ColorCode[] colors)
     {
         int currentFontStyle = Font.PLAIN;
 
@@ -669,9 +669,8 @@ class StringCache
      * @return the advance (horizontal distance) of this string plus the advance passed in as an argument
      *
      * @todo Correctly handling RTL font selection requires scanning the string from RTL as well.
-     * @todo Use bitmap fonts as a fallback if no OpenType font could be found
      */
-    private int layoutString(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance, int style)
+    private float layoutString(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, int style)
     {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will all have

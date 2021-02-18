@@ -1,5 +1,10 @@
 package betterfonts;
 
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL14;
+
+import java.awt.image.BufferedImage;
 import java.nio.IntBuffer;
 
 /**
@@ -44,6 +49,12 @@ public interface OglService {
     void glTexImage2D(int target, int level, int internalFormat, int width, int height, int border, int format, int type, IntBuffer pixels);
 
     void glTexSubImage2D(int target, int level, int xOffset, int yOffset, int width, int height, int format, int type, IntBuffer pixels);
+
+    /*
+     * Initialize texture with the provided BufferedImage. The texture is created with the same exact parameters
+     * used by minecraft
+     */
+    int allocateTexture(BufferedImage image);
 
     @SuppressWarnings("UnusedReturnValue")
     interface Tessellator {
