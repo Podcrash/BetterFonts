@@ -505,7 +505,7 @@ public class StringCache
 
         /* Using the Tessellator to queue up data in a vertex array and then draw all at once should be faster than immediate mode */
         OglService.Tessellator tessellator = oglService.tessellator();
-        tessellator.startDrawingQuads();
+        tessellator.startDrawingQuadsWithUV();
         tessellator.setColorRGBA(color);
 
         for(int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.sortedGlyphs.length; glyphIndex++)
@@ -573,7 +573,7 @@ public class StringCache
             if(boundTextureName != texture.textureName)
             {
                 tessellator.draw();
-                tessellator.startDrawingQuads();
+                tessellator.startDrawingQuadsWithUV();
                 tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
                 restoreMipmapping(); // If I don't do this mipmapping gets completely disabled

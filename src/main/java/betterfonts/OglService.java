@@ -50,6 +50,8 @@ public interface OglService {
 
         Tessellator startDrawingQuads();
 
+        Tessellator startDrawingQuadsWithUV();
+
         Tessellator setColorRGBA(int red, int green, int blue, int alpha);
 
         default Tessellator setColorRGBA(int color) {
