@@ -1,6 +1,9 @@
 package betterfonts;
 
 import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -88,6 +91,8 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
 
     private class AwtBuilderImpl implements AwtBuilder, AwtBuilderEnd
     {
+        private static final String COMMON_CHARS = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{}~";
+
         private final String name;
         private final Supplier<InputStream> inputStream;
         private final Integer inputStreamFormat;
@@ -115,16 +120,37 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
             return this;
         }
 
-        public Font getFont()
+        @Override
+        public AwtBuilderEnd fromHeight(float height)
+        {
+            final FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+            java.awt.Font font = getAwtFont((int) height);
+            Rectangle2D rectangle = null;
+
+            int pointSize = (int) height;
+            int tries = 0;
+            do {
+                if(rectangle != null)
+                    pointSize += (int) rectangle.getHeight() < height ? 1 : -1;
+
+                font = font.deriveFont(java.awt.Font.PLAIN, pointSize);
+                rectangle = font.createGlyphVector(frc, COMMON_CHARS).getVisualBounds();
+            } while(Math.abs(rectangle.getHeight() - height) <= 0.01f && ++tries < 10);
+
+            this.size = pointSize;
+            return this;
+        }
+
+        private java.awt.Font getAwtFont(int size)
         {
             if(name != null)
-                return newOpenTypeFont(new java.awt.Font(name, Font.PLAIN, size));
+                return new java.awt.Font(name, Font.PLAIN, size);
 
             if(inputStream != null && inputStreamFormat != null)
             {
                 try(InputStream is = this.inputStream.get())
                 {
-                    return newOpenTypeFont(java.awt.Font.createFont(inputStreamFormat, is).deriveFont(Font.PLAIN, size));
+                    return java.awt.Font.createFont(inputStreamFormat, is).deriveFont(Font.PLAIN, size);
                 }
                 catch(FontFormatException ex)
                 {
@@ -137,6 +163,11 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
             }
 
             throw new AssertionError("Invalid OpenTypeBuilderImpl state");
+        }
+
+        public Font getFont()
+        {
+            return newOpenTypeFont(getAwtFont(size));
         }
     }
 }

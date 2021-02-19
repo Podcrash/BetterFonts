@@ -29,6 +29,8 @@ public interface BetterFontRendererFactory
     interface AwtBuilder
     {
         AwtBuilderEnd fromPointSize(int pointSize);
+
+        AwtBuilderEnd fromHeight(float height);
     }
 
     interface AwtBuilderEnd
