@@ -22,6 +22,7 @@ package betterfonts;
 import java.lang.ref.WeakReference;
 import java.text.Bidi;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The StringCache is the public interface for rendering of all Unicode strings using OpenType fonts. It caches the glyph layout
@@ -211,6 +212,9 @@ class StringCache
         /** The total horizontal advance (i.e. width) for this string in pixels. */
         public float advance;
 
+        /** The distance from the baseline to the ascender line for this string in pixels. */
+        public float ascent;
+
         /** Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex) */
         public Glyph[] glyphs;
 
@@ -394,6 +398,14 @@ class StringCache
                 glyph.renderStyle = renderStyle;
                 glyph.stringIndex += shift;
             }
+
+            /* Find the ascent used by the majority of glyphs */
+            entry.ascent = glyphList.stream()
+                    .collect(Collectors.toMap(item -> item.ascent, item -> 1, Integer::sum))
+                    .entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse((float) 0);
 
             /*
              * Do not actually cache the string when called from other threads because GlyphCache.cacheGlyphs() will not have been called

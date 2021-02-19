@@ -35,5 +35,16 @@ public interface BetterFontRendererFactory
 
     interface AwtBuilderEnd
     {
+        AwtBuilderEnd withBaseline(float baseline);
+
+        AwtBuilderEnd withBaseline(Baseline baseline);
+    }
+
+    enum Baseline
+    {
+        /** Uses the default Minecraft baseline (7 units from the top) */
+        MINECRAFT,
+        /** Calculates the baseline by laying out the most common characters */
+        COMMON_CHARS
     }
 }

@@ -24,6 +24,9 @@ class Glyph implements Comparable<Glyph> {
     /** Glyph's horizontal advance (in pixels) used for strikethrough and underline effects */
     public float advance;
 
+    /** Glyph's distance from the baseline to the ascender line. */
+    public float ascent;
+
     /** The numeric color code (i.e. index into the colorCode[] array); -1 to reset default color */
     public byte colorCode;
 

@@ -103,6 +103,7 @@ public abstract class BaseBitmapFont implements Font, Constants
             glyph.x = advance + (newAdvance - advance);
             glyph.y = -baselineOffset();
             glyph.advance = glyphWidth * scaleFactor + glyphGap();
+            glyph.ascent = baselineOffset();
             glyphList.add(glyph);
 
             newAdvance += glyph.advance;

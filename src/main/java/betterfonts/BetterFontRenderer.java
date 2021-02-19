@@ -114,9 +114,6 @@ public class BetterFontRenderer implements Constants
         /* Make sure the entire string is cached before rendering and return its glyph representation */
         StringCache.Entry entry = stringCache.cacheString(str);
 
-        /* Adjust the baseline of the string because the startY coordinate in Minecraft is for the top of the string */
-        startY += MINECRAFT_BASELINE_OFFSET;
-
         /* Translate to the right coords */
         oglService.glTranslatef(startX, startY, 0);
 
@@ -233,8 +230,9 @@ public class BetterFontRenderer implements Constants
 
             float x1 = glyphX;
             float x2 = glyphX + texture.width * glyph.textureScale;
-            float y1 = glyph.y;
-            float y2 = glyph.y + texture.height * glyph.textureScale;
+            /* Adjust the baseline of the string because the startY coordinate in Minecraft is for the top of the string */
+            float y1 = glyph.y + glyph.ascent;
+            float y2 = glyph.y + glyph.ascent + texture.height * glyph.textureScale;
 
             tessellator.addVertexWithUV(x1, y1, 0, texture.u1, texture.v1);
             tessellator.addVertexWithUV(x1, y2, 0, texture.u1, texture.v2);
@@ -276,20 +274,22 @@ public class BetterFontRenderer implements Constants
                 Glyph glyph = entry.glyphs[glyphIndex];
                 boolean isLastGlyph = glyphIndex == entry.glyphs.length - 1;
 
-                /* Draw underline under glyph if the style is enabled */
+                /*
+                 * Draw underline/strikethrough on glyph if the style is enabled
+                 * The baseline of the string needs to be adjusted because the startY coordinate in Minecraft is for the top of the string
+                 */
                 isUnderlining = drawLineOverGlyphs(tessellator, glyph, isLastGlyph,
                         (renderStyle & StringCache.ColorCode.UNDERLINE) != 0, isUnderlining,
-                        UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                        entry.ascent + UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                 isStrikeThrough = drawLineOverGlyphs(tessellator, glyph, isLastGlyph,
                         (renderStyle & StringCache.ColorCode.STRIKETHROUGH) != 0, isStrikeThrough,
-                        STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
+                        entry.ascent + STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
             }
 
             /* Finish drawing the last strikethrough/underline segments */
             tessellator.draw();
             oglService.glEnable(GL11.GL_TEXTURE_2D);
         }
-
 
         if(antiAliasEnabled && !wasBlendEnabled)
             oglService.glDisable(GL11.GL_BLEND);

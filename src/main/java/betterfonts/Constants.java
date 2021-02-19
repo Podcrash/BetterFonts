@@ -12,4 +12,7 @@ interface Constants {
 
     /** Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline */
     int MINECRAFT_BASELINE_OFFSET = 7;
+
+    /** Common characters used to calculate stuff with AWT fonts */
+    String COMMON_CHARS = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{}~";
 }

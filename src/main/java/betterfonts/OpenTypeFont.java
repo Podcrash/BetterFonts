@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 class OpenTypeFont implements Font, Constants
 {
@@ -16,11 +17,56 @@ class OpenTypeFont implements Font, Constants
     /** Actual underlying java Font */
     private final java.awt.Font font;
 
-    public OpenTypeFont(OglService oglService, OpenTypeGlyphCache glyphCache, java.awt.Font font)
+    private final BetterFontRendererFactory.Baseline baseline;
+    private final float customBaseline;
+    private Float commonCharsBaseline;
+
+    public OpenTypeFont(OglService oglService,
+                        OpenTypeGlyphCache glyphCache,
+                        java.awt.Font font,
+                        BetterFontRendererFactory.Baseline baseline)
+    {
+        this(oglService, glyphCache, font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
+    }
+
+    public OpenTypeFont(OglService oglService,
+                        OpenTypeGlyphCache glyphCache,
+                        java.awt.Font font,
+                        float baseline)
+    {
+        this(oglService, glyphCache, font, null, baseline);
+    }
+
+    private OpenTypeFont(OglService oglService,
+                         OpenTypeGlyphCache glyphCache,
+                         java.awt.Font font,
+                         BetterFontRendererFactory.Baseline baseline,
+                         float customBaseline)
     {
         this.oglService = oglService;
         this.glyphCache = glyphCache;
         this.font = font;
+        this.baseline = baseline;
+        this.customBaseline = customBaseline;
+    }
+
+    private float getCommonCharsBaseline()
+    {
+        if(commonCharsBaseline == null)
+        {
+            /* Lay down all the common characters to calculate their positioning in a string */
+            final GlyphVector vector = glyphCache.layoutGlyphVector(font, COMMON_CHARS.toCharArray(), 0, COMMON_CHARS.length(), FontInternal.LAYOUT_LEFT_TO_RIGHT);
+            /*
+             * Find the minimum y value of the laid out string.
+             * Since AWT lays out from the baseline, that will be the distance from the baseline, so we just need to invert it
+             */
+            commonCharsBaseline = (float) -IntStream.range(0, vector.getNumGlyphs())
+                    .mapToObj(index -> vector.getGlyphPixelBounds(index, null, 0, 0).getLocation())
+                    .mapToDouble(Point::getY)
+                    .min()
+                    .orElse(0);
+        }
+        return commonCharsBaseline;
     }
 
     @Override
@@ -72,13 +118,11 @@ class OpenTypeFont implements Font, Constants
          */
         Glyph glyph = null;
         int numGlyphs = vector.getNumGlyphs();
-        for(int index = 0; index < numGlyphs; index++)
-        {
+        for(int index = 0; index < numGlyphs; index++) {
             Point position = vector.getGlyphPixelBounds(index, null, advance / MINECRAFT_SCALE_FACTOR, 0).getLocation();
 
             /* Compute horizontal advance for the previous glyph based on this glyph's position */
-            if(glyph != null)
-            {
+            if (glyph != null) {
                 glyph.advance = (position.x * MINECRAFT_SCALE_FACTOR) - glyph.x;
             }
 
@@ -93,6 +137,24 @@ class OpenTypeFont implements Font, Constants
             glyph.textureScale = MINECRAFT_SCALE_FACTOR;
             glyph.x = position.x * MINECRAFT_SCALE_FACTOR;
             glyph.y = position.y * MINECRAFT_SCALE_FACTOR;
+
+            if(baseline == null)
+            {
+                glyph.ascent = customBaseline;
+            }
+            else
+            {
+                switch (baseline)
+                {
+                    // @formatter:off
+                    case MINECRAFT: glyph.ascent = MINECRAFT_BASELINE_OFFSET; break;
+                    case COMMON_CHARS: glyph.ascent = getCommonCharsBaseline() * MINECRAFT_SCALE_FACTOR; break;
+                    // @formatter:on
+                    default:
+                        throw new AssertionError("Unsupported baseline type " + baseline);
+                }
+            }
+
             glyphList.add(glyph);
         }
 
@@ -110,7 +172,7 @@ class OpenTypeFont implements Font, Constants
     @Override
     public Font deriveFont(int style, float size)
     {
-        return new OpenTypeFont(oglService, glyphCache, font.deriveFont(style, size));
+        return new OpenTypeFont(oglService, glyphCache, font.deriveFont(style, size), baseline, customBaseline);
     }
 
     @Override

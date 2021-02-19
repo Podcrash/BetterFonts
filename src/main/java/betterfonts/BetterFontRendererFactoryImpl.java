@@ -66,7 +66,21 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     {
         if(openTypeGlyphCache == null)
             openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
-        return new OpenTypeFont(oglService, openTypeGlyphCache, font);
+        return new OpenTypeFont(oglService, openTypeGlyphCache, font, Baseline.MINECRAFT);
+    }
+
+    private OpenTypeFont newOpenTypeFont(java.awt.Font font, Baseline baseline)
+    {
+        if(openTypeGlyphCache == null)
+            openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
+        return new OpenTypeFont(oglService, openTypeGlyphCache, font, baseline);
+    }
+
+    private OpenTypeFont newOpenTypeFont(java.awt.Font font, float customBaseline)
+    {
+        if(openTypeGlyphCache == null)
+            openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
+        return new OpenTypeFont(oglService, openTypeGlyphCache, font, customBaseline);
     }
 
     @Override
@@ -91,13 +105,13 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
 
     private class AwtBuilderImpl implements AwtBuilder, AwtBuilderEnd
     {
-        private static final String COMMON_CHARS = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{}~";
-
         private final String name;
         private final Supplier<InputStream> inputStream;
         private final Integer inputStreamFormat;
 
         private int size;
+        private Baseline baseline = Baseline.MINECRAFT;
+        private float customBaseline;
 
         public AwtBuilderImpl(String name)
         {
@@ -134,10 +148,25 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
                     pointSize += (int) rectangle.getHeight() < height ? 1 : -1;
 
                 font = font.deriveFont(java.awt.Font.PLAIN, pointSize);
-                rectangle = font.createGlyphVector(frc, COMMON_CHARS).getVisualBounds();
+                rectangle = font.createGlyphVector(frc, Constants.COMMON_CHARS).getVisualBounds();
             } while(Math.abs(rectangle.getHeight() - height) <= 0.01f && ++tries < 10);
 
             this.size = pointSize;
+            return this;
+        }
+
+        @Override
+        public AwtBuilderEnd withBaseline(float baseline)
+        {
+            this.baseline = null;
+            this.customBaseline = baseline;
+            return this;
+        }
+
+        @Override
+        public AwtBuilderEnd withBaseline(Baseline baseline)
+        {
+            this.baseline = baseline;
             return this;
         }
 
@@ -167,7 +196,9 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
 
         public Font getFont()
         {
-            return newOpenTypeFont(getAwtFont(size));
+            if(baseline == null)
+                return newOpenTypeFont(getAwtFont(size), customBaseline);
+            return newOpenTypeFont(getAwtFont(size), baseline);
         }
     }
 }
