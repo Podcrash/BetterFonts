@@ -103,6 +103,21 @@ class OpenTypeFont implements FontInternal, Constants
     }
 
     @Override
+    public int canDisplayFrom(char[] text, int start, int limit)
+    {
+        for(int i = start; i < limit; i++)
+        {
+            char c = text[i];
+            if(font.canDisplay(c))
+                return i;
+            if(Character.isHighSurrogate(c) && font.canDisplay(Character.codePointAt(text, i, limit)))
+                return i;
+            i++;
+        }
+        return -1;
+    }
+
+    @Override
     public float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance)
     {
         ensureGlyphCache();

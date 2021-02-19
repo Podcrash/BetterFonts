@@ -164,6 +164,15 @@ class BitmapAsciiFont extends BaseBitmapFont
     }
 
     @Override
+    public int canDisplayFrom(char[] text, int start, int limit)
+    {
+        for(int i = start; i < limit; i++)
+            if(CHARS_TO_BITMAP_INDEXES.containsKey(text[i]))
+                return i;
+        return -1;
+    }
+
+    @Override
     protected BaseBitmapFont.Bitmap loadBitmap(char ch)
     {
         return bitmap;

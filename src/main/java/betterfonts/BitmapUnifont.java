@@ -129,6 +129,15 @@ class BitmapUnifont extends BaseBitmapFont
     }
 
     @Override
+    public int canDisplayFrom(char[] text, int start, int limit)
+    {
+        for(int i = start; i < limit; i++)
+            if(Character.isBmpCodePoint(text[i]))
+                return i;
+        return -1;
+    }
+
+    @Override
     protected Bitmap loadBitmap(char ch)
     {
         return loadPageTexture(ch / CHARACTERS_PER_PAGE);

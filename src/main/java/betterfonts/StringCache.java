@@ -22,6 +22,7 @@ package betterfonts;
 import java.lang.ref.WeakReference;
 import java.text.Bidi;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -705,27 +706,11 @@ class StringCache
         /* Break the string up into segments, where each segment can be displayed using a single font */
         while(start < limit)
         {
-            FontInternal font = fontCache.lookupFont(text, start, limit, style);
-            int next = font.canDisplayUpTo(text, start, limit);
-
-            /* canDisplayUpTo returns -1 if the entire string range is supported by this font */
-            if(next == -1)
-            {
-                next = limit;
-            }
-
-            /*
-             * canDisplayUpTo() returns start if the starting character is not supported at all. In that case, draw just the
-             * one unsupported character (which will use the font's "missing glyph code"), then retry the lookup again at the
-             * next character after that.
-             */
-            if(next == start)
-            {
-                next++;
-            }
-
-            advance = font.layoutFont(glyphList, text, start, next, layoutFlags, advance);
-            start = next;
+            final AtomicInteger limitPtr = new AtomicInteger(limit);
+            FontInternal font = fontCache.lookupFont(text, start, limitPtr, style);
+            /* limitPtr is updated with the limit at which this Font should stop rendering */
+            advance = font.layoutFont(glyphList, text, start, limitPtr.get(), layoutFlags, advance);
+            start = limitPtr.get();
         }
 
         return advance;

@@ -24,6 +24,19 @@ interface FontInternal extends Font
     int canDisplayUpTo(char[] text, int start, int limit);
 
     /**
+     * Indicates the first character this {@code Font} can display in the specified {@code text}
+     * starting at {@code start} and ending at {@code limit}.
+     *
+     * @param text the specified array of {@code char} values
+     * @param start the offset into text
+     * @param limit the (offset + length)
+     * @return an offset into {@code text} that points to the first character in {@code text} that this
+     *          {@code Font} can display; or {@code -1} if this {@code Font} can display no characters in
+     *          {@code text}.
+     */
+    int canDisplayFrom(char[] text, int start, int limit);
+
+    /**
      * Allocate new Glyph objects and add them to the glyph list. This sequence of Glyphs represents a portion of the
      * string where all glyphs run contiguously in either LTR or RTL and come from the same physical/logical font.
      *

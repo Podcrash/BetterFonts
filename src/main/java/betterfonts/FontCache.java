@@ -3,6 +3,7 @@ package betterfonts;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class FontCache
 {
@@ -28,17 +29,34 @@ class FontCache
      *
      * @param text the string to check against the font
      * @param start the offset into text at which to start checking characters for being supported by a font
-     * @param limit the (offset + length) at which to stop checking characters
+     * @param limitPtr the (offset + length) at which to stop checking characters.
+     *                 This will also be set with the latest character this Font should render.
      * @param style a combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
      * @return an OpenType font capable of displaying at least the first character at the start position in text
      */
-    public FontInternal lookupFont(char[] text, int start, int limit, int style)
+    public FontInternal lookupFont(char[] text, int start, AtomicInteger limitPtr, int style)
     {
-        for (FontInternal font : fonts)
-            /* Only use the font if it can layout at least the first character of the requested string range */
-            if (font.canDisplayUpTo(text, start, limit) != start)
+        for(FontInternal font : fonts)
+        {
+            final int newLimit = font.canDisplayUpTo(text, start, limitPtr.get());
+            /* Only use the font if it can layout alla characters (-1) or at least the first character of the requested string range */
+            if(newLimit == -1 || newLimit != start)
+            {
+                /* Set the last characters this font can render */
+                limitPtr.getAndUpdate(l -> newLimit != -1 ? newLimit : l);
                 /* Return a font instance of the proper style; usedFonts has only plain style fonts */
                 return font.deriveFont(style);
+            }
+            /*
+             * This font can't display the first character, but maybe it can display some subsequent ones
+             * We want to respect the user defined order, so set that as the new limit to use for subsequent fonts.
+             */
+            limitPtr.getAndUpdate(l -> {
+                final int newL = font.canDisplayFrom(text, start, l);
+                /* canDisplayFrom returns -1 if the font cannot display any character */
+                return newL == -1 ? l : Math.min(l, newL);
+            });
+        }
 
         /* If no supported fonts found, use the default one (first in usedFonts) so it can draw its unknown character glyphs */
         final FontInternal font = fonts.get(0);
