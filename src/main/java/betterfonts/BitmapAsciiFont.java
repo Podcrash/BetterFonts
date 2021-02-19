@@ -218,7 +218,7 @@ class BitmapAsciiFont extends BaseBitmapFont
     }
 
     @Override
-    public Font deriveFont(int style, float size)
+    public FontInternal deriveFont(int style, float size)
     {
         return new BitmapAsciiFont(oglService, bitmap, glyphWidths, name, style, size);
     }

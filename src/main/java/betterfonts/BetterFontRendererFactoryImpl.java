@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -19,12 +20,37 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
 {
     private final OglService oglService;
     private final int[] colors;
-    private final List<Font> fonts = new ArrayList<>();
+    private final List<FontInternal> fonts = new ArrayList<>();
 
     public BetterFontRendererFactoryImpl(OglService oglService, int[] colors)
     {
         this.oglService = oglService;
         this.colors = colors;
+    }
+
+    @Override
+    public BetterFontRendererFactory withFont(Font font)
+    {
+        if(!(font instanceof FontInternal))
+            throw new AssertionError("" +
+                    "All types need to implement FontInternal " +
+                    "(instance: " + font + ", type: " + font.getClass() + ")");
+        fonts.add((FontInternal) font);
+        return this;
+    }
+
+    @Override
+    public BetterFontRendererFactory withFonts(Font... fonts)
+    {
+        Arrays.stream(fonts).forEach(this::withFont);
+        return this;
+    }
+
+    @Override
+    public BetterFontRendererFactory withFonts(Collection<Font> fonts)
+    {
+        fonts.forEach(this::withFont);
+        return this;
     }
 
     @Override
@@ -173,7 +199,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
             throw new AssertionError("Invalid OpenTypeBuilderImpl state");
         }
 
-        public Font getFont()
+        public FontInternal getFont()
         {
             if(baseline == null)
                 return new OpenTypeFont(oglService, getAwtFont(size), customBaseline);

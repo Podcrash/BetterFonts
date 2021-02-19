@@ -1,6 +1,7 @@
 package betterfonts;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -11,6 +12,12 @@ public interface BetterFontRendererFactory
     static BetterFontRendererFactory create(OglService oglService, int[] colors) {
         return new BetterFontRendererFactoryImpl(oglService, colors);
     }
+
+    BetterFontRendererFactory withFont(Font font);
+
+    BetterFontRendererFactory withFonts(Font... fonts);
+
+    BetterFontRendererFactory withFonts(Collection<Font> fonts);
 
     BetterFontRendererFactory useSystemFonts(int pointSize);
 

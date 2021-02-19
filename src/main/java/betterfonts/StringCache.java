@@ -567,7 +567,7 @@ class StringCache
             /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
             if(bidi.isRightToLeft())
             {
-                return layoutStyle(glyphList, text, start, limit, Font.LAYOUT_RIGHT_TO_LEFT, advance, colors);
+                return layoutStyle(glyphList, text, start, limit, FontInternal.LAYOUT_RIGHT_TO_LEFT, advance, colors);
             }
 
             /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
@@ -595,7 +595,7 @@ class StringCache
                     int logicalIndex = ranges[visualIndex];
 
                     /* An odd numbered level indicates right-to-left ordering */
-                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
+                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? FontInternal.LAYOUT_RIGHT_TO_LEFT : FontInternal.LAYOUT_LEFT_TO_RIGHT;
                     advance = layoutStyle(glyphList, text, start + bidi.getRunStart(logicalIndex), start + bidi.getRunLimit(logicalIndex),
                         layoutFlag, advance, colors);
                 }
@@ -607,7 +607,7 @@ class StringCache
         /* If text is entirely left-to-right, then insert an EntryText node for the entire string */
         else
         {
-            return layoutStyle(glyphList, text, start, limit, Font.LAYOUT_LEFT_TO_RIGHT, advance, colors);
+            return layoutStyle(glyphList, text, start, limit, FontInternal.LAYOUT_LEFT_TO_RIGHT, advance, colors);
         }
     }
 
@@ -705,7 +705,7 @@ class StringCache
         /* Break the string up into segments, where each segment can be displayed using a single font */
         while(start < limit)
         {
-            Font font = fontCache.lookupFont(text, start, limit, style);
+            FontInternal font = fontCache.lookupFont(text, start, limit, style);
             int next = font.canDisplayUpTo(text, start, limit);
 
             /* canDisplayUpTo returns -1 if the entire string range is supported by this font */

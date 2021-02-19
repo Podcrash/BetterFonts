@@ -1,6 +1,7 @@
 package betterfonts;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class FontCache
@@ -10,13 +11,15 @@ class FontCache
      * This list will only have plain variation of a font, unlike fontCache which could have multiple entries
      * for the various styles (i.e. bold, italic, etc.) of a font.
      */
-    private final List<Font> fonts;
+    private final List<FontInternal> fonts;
+    private final List<Font> unmodifiableFonts;
 
-    public FontCache(List<Font> fonts)
+    public FontCache(List<FontInternal> fonts)
     {
         if(fonts.isEmpty())
             throw new UnsupportedOperationException("The FontRenderer needs at least 1 font");
         this.fonts = new ArrayList<>(fonts);
+        this.unmodifiableFonts = Collections.unmodifiableList(this.fonts);
     }
 
     /**
@@ -29,17 +32,22 @@ class FontCache
      * @param style a combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
      * @return an OpenType font capable of displaying at least the first character at the start position in text
      */
-    public Font lookupFont(char[] text, int start, int limit, int style)
+    public FontInternal lookupFont(char[] text, int start, int limit, int style)
     {
-        for (Font font : fonts)
+        for (FontInternal font : fonts)
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplayUpTo(text, start, limit) != start)
                 /* Return a font instance of the proper style; usedFonts has only plain style fonts */
                 return font.deriveFont(style);
 
         /* If no supported fonts found, use the default one (first in usedFonts) so it can draw its unknown character glyphs */
-        final Font font = fonts.get(0);
+        final FontInternal font = fonts.get(0);
         /* Return a font instance of the proper point size and style; usedFonts only 1pt sized plain style fonts */
         return font.deriveFont(style);
+    }
+
+    public List<Font> getFonts()
+    {
+        return unmodifiableFonts;
     }
 }

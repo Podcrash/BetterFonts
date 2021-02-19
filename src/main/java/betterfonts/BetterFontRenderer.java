@@ -66,7 +66,7 @@ public class BetterFontRenderer implements Constants
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    BetterFontRenderer(OglService oglService, int[] colors, List<Font> fonts, boolean antiAlias)
+    BetterFontRenderer(OglService oglService, int[] colors, List<FontInternal> fonts, boolean antiAlias)
     {
         this.oglService = oglService;
         this.colorTable = colors;
@@ -94,6 +94,10 @@ public class BetterFontRenderer implements Constants
         this.antiAliasEnabled = antiAlias;
         if(openTypeGlyphCache != null)
             openTypeGlyphCache.setAntiAlias(antiAlias);
+    }
+
+    public List<Font> getFonts() {
+        return fontCache.getFonts();
     }
 
     /**

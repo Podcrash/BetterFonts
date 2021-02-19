@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-class OpenTypeFont implements Font, Constants
+class OpenTypeFont implements FontInternal, Constants
 {
     /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
     private OpenTypeGlyphCache glyphCache;
@@ -181,7 +181,7 @@ class OpenTypeFont implements Font, Constants
     }
 
     @Override
-    public Font deriveFont(int style, float size)
+    public FontInternal deriveFont(int style, float size)
     {
         return new OpenTypeFont(oglService, glyphCache, font.deriveFont(style, size), baseline, customBaseline);
     }

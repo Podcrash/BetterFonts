@@ -183,7 +183,7 @@ class BitmapUnifont extends BaseBitmapFont
     }
 
     @Override
-    public Font deriveFont(int style, float size)
+    public FontInternal deriveFont(int style, float size)
     {
         return new BitmapUnifont(oglService, glyphSizes, pageSupplier, pageCache, name, style, size);
     }

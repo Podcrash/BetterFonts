@@ -2,7 +2,7 @@ package betterfonts;
 
 import java.util.List;
 
-public abstract class BaseBitmapFont implements Font, Constants
+public abstract class BaseBitmapFont implements FontInternal, Constants
 {
     /** Style of this font */
     protected final int style;
