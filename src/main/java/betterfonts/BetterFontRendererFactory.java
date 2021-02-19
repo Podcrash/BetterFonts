@@ -7,9 +7,10 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public interface BetterFontRendererFactory
+public interface BetterFontRendererFactory extends BetterFontConditionalClauses.ReturnSameType<BetterFontRendererFactory>
 {
-    static BetterFontRendererFactory create(OglService oglService, int[] colors) {
+    static BetterFontRendererFactory create(OglService oglService, int[] colors)
+    {
         return new BetterFontRendererFactoryImpl(oglService, colors);
     }
 
@@ -21,11 +22,11 @@ public interface BetterFontRendererFactory
 
     BetterFontRendererFactory useSystemFonts(int pointSize);
 
-    BetterFontRendererFactory withOpenTypeFont(String name, Function<AwtBuilder, AwtBuilderEnd> openTypeFont);
+    BetterFontRendererFactory withOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
-    BetterFontRendererFactory withOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder, AwtBuilderEnd> openTypeFont);
+    BetterFontRendererFactory withOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
-    BetterFontRendererFactory withAwtFont(Supplier<InputStream> is, int fontFormat, Function<AwtBuilder, AwtBuilderEnd> openTypeFont);
+    BetterFontRendererFactory withAwtFont(Supplier<InputStream> is, int fontFormat, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
     BetterFontRendererFactory withBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size);
 
@@ -33,18 +34,18 @@ public interface BetterFontRendererFactory
 
     BetterFontRenderer build();
 
-    interface AwtBuilder
+    interface AwtBuilder<R extends AwtBuilderEnd<R>, T extends AwtBuilder<R, T>> extends BetterFontConditionalClauses.ReturnDiffType<T, R>
     {
-        AwtBuilderEnd fromPointSize(int pointSize);
+        R fromPointSize(int pointSize);
 
-        AwtBuilderEnd fromHeight(float height);
+        R fromHeight(float height);
     }
 
-    interface AwtBuilderEnd
+    interface AwtBuilderEnd<T extends AwtBuilderEnd<T>> extends BetterFontConditionalClauses.ReturnSameType<T>
     {
-        AwtBuilderEnd withBaseline(float baseline);
+        T withBaseline(float baseline);
 
-        AwtBuilderEnd withBaseline(Baseline baseline);
+        T withBaseline(Baseline baseline);
     }
 
     enum Baseline

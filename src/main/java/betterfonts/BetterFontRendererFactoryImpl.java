@@ -29,6 +29,20 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     }
 
     @Override
+    public BetterFontRendererFactory when(boolean condition,
+                                          Function<BetterFontRendererFactory, BetterFontRendererFactory> action,
+                                          Function<BetterFontRendererFactory, BetterFontRendererFactory> or)
+    {
+        return condition ? action.apply(this) : or.apply(this);
+    }
+
+    @Override
+    public BetterFontRendererFactory when(boolean condition, Function<BetterFontRendererFactory, BetterFontRendererFactory> action)
+    {
+        return condition ? action.apply(this) : this;
+    }
+
+    @Override
     public BetterFontRendererFactory withFont(Font font)
     {
         if(!(font instanceof FontInternal))
@@ -66,21 +80,21 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     }
 
     @Override
-    public BetterFontRendererFactory withOpenTypeFont(String name, Function<AwtBuilder, AwtBuilderEnd> openTypeFont)
+    public BetterFontRendererFactory withOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         fonts.add(((AwtBuilderImpl) openTypeFont.apply(new AwtBuilderImpl(name))).getFont());
         return this;
     }
 
     @Override
-    public BetterFontRendererFactory withOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder, AwtBuilderEnd> openTypeFont)
+    public BetterFontRendererFactory withOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         withAwtFont(is, java.awt.Font.TRUETYPE_FONT, openTypeFont);
         return this;
     }
 
     @Override
-    public BetterFontRendererFactory withAwtFont(Supplier<InputStream> is, int fontFormat, Function<AwtBuilder, AwtBuilderEnd> openTypeFont)
+    public BetterFontRendererFactory withAwtFont(Supplier<InputStream> is, int fontFormat, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         fonts.add(((AwtBuilderImpl) openTypeFont.apply(new AwtBuilderImpl(is, fontFormat))).getFont());
         return this;
@@ -108,7 +122,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         return fontRenderer;
     }
 
-    private class AwtBuilderImpl implements AwtBuilder, AwtBuilderEnd
+    private class AwtBuilderImpl implements AwtBuilder<AwtBuilderImpl, AwtBuilderImpl>, AwtBuilderEnd<AwtBuilderImpl>
     {
         private final String name;
         private final Supplier<InputStream> inputStream;
@@ -133,14 +147,28 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         }
 
         @Override
-        public AwtBuilderEnd fromPointSize(int pointSize)
+        public AwtBuilderImpl when(boolean condition, Function<AwtBuilderImpl, AwtBuilderImpl> action)
+        {
+            return condition ? action.apply(this) : this;
+        }
+
+        @Override
+        public AwtBuilderImpl when(boolean condition,
+                                   Function<AwtBuilderImpl, AwtBuilderImpl> action,
+                                   Function<AwtBuilderImpl, AwtBuilderImpl> or)
+        {
+            return condition ? action.apply(this) : or.apply(this);
+        }
+
+        @Override
+        public AwtBuilderImpl fromPointSize(int pointSize)
         {
             this.size = pointSize;
             return this;
         }
 
         @Override
-        public AwtBuilderEnd fromHeight(float height)
+        public AwtBuilderImpl fromHeight(float height)
         {
             final FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
             java.awt.Font font = getAwtFont((int) height);
@@ -161,7 +189,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         }
 
         @Override
-        public AwtBuilderEnd withBaseline(float baseline)
+        public AwtBuilderImpl withBaseline(float baseline)
         {
             this.baseline = null;
             this.customBaseline = baseline;
@@ -169,7 +197,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         }
 
         @Override
-        public AwtBuilderEnd withBaseline(Baseline baseline)
+        public AwtBuilderImpl withBaseline(Baseline baseline)
         {
             this.baseline = baseline;
             return this;
