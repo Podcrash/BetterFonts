@@ -77,7 +77,9 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     @Override
     public BetterFontRenderer build()
     {
-        return new BetterFontRenderer(oglService, colors, fonts, true);
+        final BetterFontRenderer fontRenderer = new BetterFontRenderer(oglService, colors, fonts, true);
+        fonts.clear();
+        return fontRenderer;
     }
 
     private class AwtBuilderImpl implements AwtBuilder, AwtBuilderEnd

@@ -1,5 +1,6 @@
 package betterfonts;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class FontCache
@@ -13,7 +14,9 @@ class FontCache
 
     public FontCache(List<Font> fonts)
     {
-        this.fonts = fonts;
+        if(fonts.isEmpty())
+            throw new UnsupportedOperationException("The FontRenderer needs at least 1 font");
+        this.fonts = new ArrayList<>(fonts);
     }
 
     /**
