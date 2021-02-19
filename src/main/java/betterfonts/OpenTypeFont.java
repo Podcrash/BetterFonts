@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 class OpenTypeFont implements Font, Constants
 {
     /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
-    private final OpenTypeGlyphCache glyphCache;
+    private OpenTypeGlyphCache glyphCache;
 
     /** Service used to make OpenGL calls */
     private final OglService oglService;
@@ -22,19 +22,17 @@ class OpenTypeFont implements Font, Constants
     private Float commonCharsBaseline;
 
     public OpenTypeFont(OglService oglService,
-                        OpenTypeGlyphCache glyphCache,
                         java.awt.Font font,
                         BetterFontRendererFactory.Baseline baseline)
     {
-        this(oglService, glyphCache, font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
+        this(oglService, null, font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
     }
 
     public OpenTypeFont(OglService oglService,
-                        OpenTypeGlyphCache glyphCache,
                         java.awt.Font font,
                         float baseline)
     {
-        this(oglService, glyphCache, font, null, baseline);
+        this(oglService, null, font, null, baseline);
     }
 
     private OpenTypeFont(OglService oglService,
@@ -69,6 +67,17 @@ class OpenTypeFont implements Font, Constants
         return commonCharsBaseline;
     }
 
+    void setGlyphCache(OpenTypeGlyphCache glyphCache)
+    {
+        this.glyphCache = glyphCache;
+    }
+
+    private void ensureGlyphCache()
+    {
+        if(glyphCache == null)
+            throw new AssertionError("GlyphCache hasn't been set yet");
+    }
+
     @Override
     public String getName()
     {
@@ -96,6 +105,8 @@ class OpenTypeFont implements Font, Constants
     @Override
     public float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance)
     {
+        ensureGlyphCache();
+
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
          * main thread because cacheGlyphs() can crash LWJGL if it makes OpenGL calls from any other thread. In this case,

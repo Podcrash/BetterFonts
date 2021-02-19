@@ -66,11 +66,27 @@ public class BetterFontRenderer implements Constants
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    BetterFontRenderer(OglService oglService, OpenTypeGlyphCache openTypeGlyphCache, int[] colors, List<Font> fonts, boolean antiAlias)
+    BetterFontRenderer(OglService oglService, int[] colors, List<Font> fonts, boolean antiAlias)
     {
         this.oglService = oglService;
         this.colorTable = colors;
 
+        /*
+         * Create a new cache and provide it to all OpenTypeFonts
+         * This is hacky-ish, but it's the only way to remove potential problems with the same instance being
+         * used by multiple FontRenderers (then good luck understanding when we need to destroy it)
+         * or shared across fonts when they are derived.
+         */
+        OpenTypeGlyphCache openTypeGlyphCache = null;
+        for(Font font : fonts)
+        {
+           if(!(font instanceof OpenTypeFont))
+               continue;
+
+           if(openTypeGlyphCache == null)
+               openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
+            ((OpenTypeFont) font).setGlyphCache(openTypeGlyphCache);
+        }
         this.openTypeGlyphCache = openTypeGlyphCache;
         this.fontCache = new FontCache(fonts);
         this.stringCache = new StringCache(oglService, fontCache);

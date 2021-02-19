@@ -21,8 +21,6 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     private final int[] colors;
     private final List<Font> fonts = new ArrayList<>();
 
-    private OpenTypeGlyphCache openTypeGlyphCache;
-
     public BetterFontRendererFactoryImpl(OglService oglService, int[] colors)
     {
         this.oglService = oglService;
@@ -34,9 +32,9 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     {
         /* Use Java's logical font as the default initial font if user does not override it */
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
-        fonts.add(newOpenTypeFont(new java.awt.Font(java.awt.Font.SANS_SERIF, Font.PLAIN, pointSize)));
+        fonts.add(new OpenTypeFont(oglService, new java.awt.Font(java.awt.Font.SANS_SERIF, Font.PLAIN, pointSize), Baseline.MINECRAFT));
         fonts.addAll(Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts())
-                .map(f -> newOpenTypeFont(f.deriveFont(f.getStyle(), pointSize)))
+                .map(f -> new OpenTypeFont(oglService, f.deriveFont(f.getStyle(), pointSize), Baseline.MINECRAFT))
                 .collect(Collectors.toList()));
         return this;
     }
@@ -62,27 +60,6 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         return this;
     }
 
-    private OpenTypeFont newOpenTypeFont(java.awt.Font font)
-    {
-        if(openTypeGlyphCache == null)
-            openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
-        return new OpenTypeFont(oglService, openTypeGlyphCache, font, Baseline.MINECRAFT);
-    }
-
-    private OpenTypeFont newOpenTypeFont(java.awt.Font font, Baseline baseline)
-    {
-        if(openTypeGlyphCache == null)
-            openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
-        return new OpenTypeFont(oglService, openTypeGlyphCache, font, baseline);
-    }
-
-    private OpenTypeFont newOpenTypeFont(java.awt.Font font, float customBaseline)
-    {
-        if(openTypeGlyphCache == null)
-            openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
-        return new OpenTypeFont(oglService, openTypeGlyphCache, font, customBaseline);
-    }
-
     @Override
     public BetterFontRendererFactory withBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size)
     {
@@ -100,7 +77,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     @Override
     public BetterFontRenderer build()
     {
-        return new BetterFontRenderer(oglService, openTypeGlyphCache, colors, fonts, true);
+        return new BetterFontRenderer(oglService, colors, fonts, true);
     }
 
     private class AwtBuilderImpl implements AwtBuilder, AwtBuilderEnd
@@ -197,8 +174,8 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         public Font getFont()
         {
             if(baseline == null)
-                return newOpenTypeFont(getAwtFont(size), customBaseline);
-            return newOpenTypeFont(getAwtFont(size), baseline);
+                return new OpenTypeFont(oglService, getAwtFont(size), customBaseline);
+            return new OpenTypeFont(oglService, getAwtFont(size), baseline);
         }
     }
 }
