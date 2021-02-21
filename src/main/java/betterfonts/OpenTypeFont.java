@@ -2,6 +2,7 @@ package betterfonts;
 
 import java.awt.*;
 import java.awt.font.GlyphVector;
+import java.awt.font.LineMetrics;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -135,6 +136,7 @@ class OpenTypeFont implements FontInternal, Constants
 
         /* Creating a GlyphVector takes care of all language specific OpenType glyph substitutions and positioning */
         GlyphVector vector = glyphCache.layoutGlyphVector(font, text, start, limit, layoutFlags);
+        LineMetrics lineMetrics = glyphCache.getLineMetrics(font, text, start, limit);
 
         /*
          * Extract all needed information for each glyph from the GlyphVector so it won't be needed for actual rendering.
@@ -174,6 +176,7 @@ class OpenTypeFont implements FontInternal, Constants
                 {
                     // @formatter:off
                     case MINECRAFT: glyph.ascent = MINECRAFT_BASELINE_OFFSET; break;
+                    case AWT: glyph.ascent = lineMetrics.getAscent() * MINECRAFT_SCALE_FACTOR; break;
                     case COMMON_CHARS: glyph.ascent = getCommonCharsBaseline() * MINECRAFT_SCALE_FACTOR; break;
                     // @formatter:on
                     default:

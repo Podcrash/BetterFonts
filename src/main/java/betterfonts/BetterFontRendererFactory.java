@@ -52,6 +52,8 @@ public interface BetterFontRendererFactory extends BetterFontConditionalClauses.
     {
         /** Uses the default Minecraft baseline (7 units from the top) */
         MINECRAFT,
+        /** Uses the baseline calculated by awt */
+        AWT,
         /** Calculates the baseline by laying out the most common characters */
         COMMON_CHARS
     }

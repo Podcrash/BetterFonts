@@ -25,6 +25,7 @@ import java.awt.Font;
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
+import java.awt.font.LineMetrics;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.nio.Buffer;
@@ -186,6 +187,25 @@ class OpenTypeGlyphCache
             fontCache.put(font, fontCache.size());
         }
         return font.layoutGlyphVector(fontRenderContext, text, start, limit, layoutFlags);
+    }
+
+    /**
+     * Returns a {@code LineMetrics} object created with the specified arguments.
+     *
+     * @param font the Font used to layout a GlyphVector for the string
+     * @param text the string to layout
+     * @param start the offset into text at which to start the layout
+     * @param limit the (offset + length) at which to stop performing the layout
+     * @return a {@code LineMetrics} object created with the specified arguments.
+     */
+    public LineMetrics getLineMetrics(Font font, char[] text, int start, int limit)
+    {
+        /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
+        if(!fontCache.containsKey(font))
+        {
+            fontCache.put(font, fontCache.size());
+        }
+        return font.getLineMetrics(text, start, limit, fontRenderContext);
     }
 
     /**
