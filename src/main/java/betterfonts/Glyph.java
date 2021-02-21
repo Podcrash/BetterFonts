@@ -27,6 +27,9 @@ class Glyph implements Comparable<Glyph> {
     /** Glyph's distance from the baseline to the ascender line. */
     public float ascent;
 
+    /** Glyph's height. */
+    public float height;
+
     /** The numeric color code (i.e. index into the colorCode[] array); -1 to reset default color */
     public byte colorCode;
 

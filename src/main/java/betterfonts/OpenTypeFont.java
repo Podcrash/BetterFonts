@@ -165,6 +165,9 @@ class OpenTypeFont implements FontInternal, Constants
             glyph.textureScale = MINECRAFT_SCALE_FACTOR;
             glyph.x = position.x * MINECRAFT_SCALE_FACTOR;
             glyph.y = position.y * MINECRAFT_SCALE_FACTOR;
+            // TODO: both the height and the ascent are actually calculated for the specific substring,
+            //       not for the glyph, so they shouldn't be saved in the glyph object
+            glyph.height = (lineMetrics.getAscent() + lineMetrics.getDescent()) * MINECRAFT_SCALE_FACTOR;
 
             if(baseline == null)
             {

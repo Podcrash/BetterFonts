@@ -216,6 +216,9 @@ class StringCache
         /** The distance from the baseline to the ascender line for this string in pixels. */
         public float ascent;
 
+        /** The height for this string in pixels. */
+        public float height;
+
         /** Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex) */
         public Glyph[] glyphs;
 
@@ -407,6 +410,12 @@ class StringCache
                     .max(Map.Entry.comparingByValue())
                     .map(Map.Entry::getKey)
                     .orElse((float) 0);
+
+            /* Find the maximum height of the glyphs */
+            entry.height = (float) glyphList.stream()
+                    .mapToDouble(glyph -> glyph.height)
+                    .max()
+                    .orElse(0);
 
             /*
              * Do not actually cache the string when called from other threads because GlyphCache.cacheGlyphs() will not have been called

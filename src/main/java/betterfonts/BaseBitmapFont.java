@@ -104,6 +104,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
             glyph.y = -baselineOffset();
             glyph.advance = glyphWidth * scaleFactor + glyphGap();
             glyph.ascent = baselineOffset();
+            glyph.height = size * MINECRAFT_SCALE_FACTOR;
             glyphList.add(glyph);
 
             newAdvance += glyph.advance;

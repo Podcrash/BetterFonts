@@ -388,6 +388,27 @@ public class BetterFontRenderer implements Constants
     }
 
     /**
+     * Return the height of a string in pixels. Used for centering strings inside GUI buttons.
+     *
+     * @param str compute the height of this string
+     * @return the height in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
+     */
+    public float getStringHeight(String str)
+    {
+        /* Check for invalid arguments */
+        if(str == null || str.isEmpty())
+        {
+            return 0;
+        }
+
+        /* Make sure the entire string is cached and rendered since it will probably be used again in a renderString() call */
+        StringCache.Entry entry = stringCache.cacheString(str);
+
+        /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
+        return entry.height;
+    }
+
+    /**
      * Return the number of characters in a string that will completely fit inside the specified width when rendered, with
      * or without preferring to break the line at whitespace instead of breaking in the middle of a word. This private provides
      * the real implementation of both sizeStringToWidth() and trimStringToWidth().
