@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 
+import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -427,6 +428,68 @@ public class BetterFontRenderer implements Constants
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
         return entry.ascent;
+    }
+
+    /**
+     * Return the bounds in pixels where this string gets rendered in, relative to its height and width.
+     * Used for centering strings inside GUI buttons.
+     *
+     * @param str compute the visual bounds of this string
+     * @return the visual bounds in pixels
+     */
+    public Rectangle2D.Float getStringVisualBounds(String str)
+    {
+        return getStringVisualBounds(str, new Rectangle2D.Float());
+    }
+
+    /**
+     * Return the bounds in pixels where this string gets rendered in, relative to its height and width.
+     * Used for centering strings inside GUI buttons.
+     *
+     * This overload uses and returns the rect provided by the user, without creating another one.
+     * Should be used for caching purposes.
+     *
+     * @param str compute the visual bounds of this string
+     * @param rectangle rect where the visual bounds will be set
+     * @return the visual bounds in pixels
+     */
+    public Rectangle2D.Float getStringVisualBounds(String str, Rectangle2D.Float rectangle)
+    {
+        /* Check for invalid arguments */
+        if(str == null || str.isEmpty())
+        {
+            rectangle.x = rectangle.y = rectangle.width = rectangle.height = 0;
+            return rectangle;
+        }
+
+        /* Make sure the entire string is cached and rendered since it will probably be used again in a renderString() call */
+        StringCache.Entry entry = stringCache.cacheString(str);
+
+        float minX = 0, maxX = 0;
+        float minY = 0, maxY = 0;
+
+        for(int glyphIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++)
+        {
+            /* Select the current glyph's horizontal layout position within this string */
+            Glyph glyph = entry.glyphs[glyphIndex];
+
+            final float x1 = glyph.x;
+            final float x2 = glyph.x + glyph.texture.width * glyph.textureScale;
+            final float y1 = glyph.y + glyph.ascent;
+            final float y2 = glyph.y + glyph.ascent + glyph.texture.height * glyph.textureScale;
+
+            /* Find the minimum and maximum coordinates */
+            minX = glyphIndex == 0 ? x1 : Math.min(minX, x1);
+            maxX = glyphIndex == 0 ? x2 : Math.max(maxX, x2);
+            minY = glyphIndex == 0 ? y1 : Math.min(minY, y1);
+            maxY = glyphIndex == 0 ? y2 : Math.max(maxY, y2);
+        }
+
+        rectangle.x = minX;
+        rectangle.y = minY;
+        rectangle.width = maxX - minX;
+        rectangle.height = maxY - minY;
+        return rectangle;
     }
 
     /**
