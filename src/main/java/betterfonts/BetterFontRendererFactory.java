@@ -46,6 +46,14 @@ public interface BetterFontRendererFactory extends BetterFontConditionalClauses.
         T withBaseline(float baseline);
 
         T withBaseline(Baseline baseline);
+
+        T withWeight(float weight);
+
+        T withPosture(float posture);
+
+        T withKerning(boolean kerning);
+
+        T withLigatures(boolean ligatures);
     }
 
     enum Baseline

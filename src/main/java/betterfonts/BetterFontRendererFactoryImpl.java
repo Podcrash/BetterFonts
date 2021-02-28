@@ -2,14 +2,13 @@ package betterfonts;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
+import java.awt.font.TextAttribute;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -132,6 +131,11 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         private Baseline baseline = Baseline.MINECRAFT;
         private float customBaseline;
 
+        private Float weight;
+        private Float posture;
+        private Integer kerning;
+        private Integer ligatures;
+
         public AwtBuilderImpl(String name)
         {
             this.name = name;
@@ -203,16 +207,42 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
             return this;
         }
 
+        @Override
+        public AwtBuilderImpl withWeight(float weight) {
+            this.weight = weight;
+            return this;
+        }
+
+        @Override
+        public AwtBuilderImpl withPosture(float posture) {
+            this.posture = posture;
+            return this;
+        }
+
+        @Override
+        public AwtBuilderImpl withKerning(boolean kerning) {
+            this.kerning = kerning ? TextAttribute.KERNING_ON : 0;
+            return this;
+        }
+
+        @Override
+        public AwtBuilderImpl withLigatures(boolean ligatures) {
+            this.ligatures = ligatures ? TextAttribute.LIGATURES_ON : 0;
+            return this;
+        }
+
         private java.awt.Font getAwtFont(int size)
         {
+            final java.awt.Font font;
             if(name != null)
-                return new java.awt.Font(name, Font.PLAIN, size);
-
-            if(inputStream != null && inputStreamFormat != null)
+            {
+                font = new java.awt.Font(name, Font.PLAIN, size);
+            }
+            else if(inputStream != null && inputStreamFormat != null)
             {
                 try(InputStream is = this.inputStream.get())
                 {
-                    return java.awt.Font.createFont(inputStreamFormat, is).deriveFont(Font.PLAIN, size);
+                    font = java.awt.Font.createFont(inputStreamFormat, is).deriveFont(Font.PLAIN, size);
                 }
                 catch(FontFormatException ex)
                 {
@@ -223,8 +253,24 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
                     throw new UncheckedIOException("Couldn't read the provided font InputStream", ex);
                 }
             }
+            else
+            {
+                throw new AssertionError("Invalid OpenTypeBuilderImpl state");
+            }
 
-            throw new AssertionError("Invalid OpenTypeBuilderImpl state");
+            final Map<TextAttribute, Object> attributes = new HashMap<>();
+            if(weight != null)
+                attributes.put(TextAttribute.WEIGHT, weight);
+            if(posture != null)
+                attributes.put(TextAttribute.POSTURE, posture);
+            if(kerning != null)
+                attributes.put(TextAttribute.KERNING, kerning);
+            if(ligatures != null)
+                attributes.put(TextAttribute.LIGATURES, ligatures);
+
+            return attributes.isEmpty() ?
+                    font :
+                    font.deriveFont(attributes);
         }
 
         public FontInternal getFont()

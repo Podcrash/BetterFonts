@@ -3,6 +3,7 @@ package betterfonts;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.font.LineMetrics;
+import java.awt.font.TextAttribute;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -204,7 +205,11 @@ class OpenTypeFont implements FontInternal, Constants
     @Override
     public FontInternal deriveFont(int style, float size)
     {
-        return new OpenTypeFont(oglService, glyphCache, font.deriveFont(style, size), baseline, customBaseline);
+        final java.awt.Font derived = font.getAttributes().get(TextAttribute.WEIGHT) == null && font.getAttributes().get(TextAttribute.POSTURE) == null ?
+                font.deriveFont(style, size) :
+                // Need to preserve the weight and posture, cause deriveFont(style) overrides it
+                font.deriveFont(style, size).deriveFont(font.getAttributes());
+        return new OpenTypeFont(oglService, glyphCache, derived, baseline, customBaseline);
     }
 
     @Override
