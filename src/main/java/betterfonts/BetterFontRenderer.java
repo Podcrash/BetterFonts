@@ -5,9 +5,7 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 
 import java.awt.geom.Rectangle2D;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class BetterFontRenderer implements Constants
@@ -99,6 +97,38 @@ public class BetterFontRenderer implements Constants
 
     public List<Font> getFonts() {
         return fontCache.getFonts();
+    }
+
+    public int drawString(String text, int startX, int startY, int initialColor, boolean dropShadow)
+    {
+        oglService.glEnable(GL11.GL_ALPHA);
+
+        if(dropShadow)
+        {
+            int newX;
+            newX = renderString(text, startX + 1, startY + 1, adjustColor(initialColor, true), true);
+            newX = Math.max(newX, renderString(text, startX, startY, adjustColor(initialColor, false), false));
+            return newX;
+        }
+
+        return renderString(text, startX, startY, adjustColor(initialColor, false), false);
+    }
+
+    /**
+     * Applies the same adjustments as Minecraft does at the given color
+     *
+     * @param initialColor color
+     * @param shadowFlag whether the color is used to render the string shadow
+     * @return adjusted color
+     */
+    private int adjustColor(int initialColor, boolean shadowFlag) {
+        /* If the alpha is below a certain threshold (<= 3), use the maximum (255) */
+        if((initialColor & 0xFC000000) == 0)
+            initialColor |= 0xFF000000;
+        /* Fix the color to be used for shadows */
+        if(shadowFlag)
+            initialColor = (initialColor & 0xFCFCFC) >> 2 | initialColor & 0xFF000000;
+        return initialColor;
     }
 
     /**
@@ -389,6 +419,17 @@ public class BetterFontRenderer implements Constants
     }
 
     /**
+     * Return the width of a character in pixels. Used for centering strings inside GUI buttons.
+     *
+     * @param character compute the width of this character
+     * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
+     */
+    public int getCharWidth(char character)
+    {
+        return getStringWidth(String.valueOf(character));
+    }
+
+    /**
      * Return the height of a string in pixels. Used for centering strings inside GUI buttons.
      *
      * @param str compute the height of this string
@@ -567,6 +608,18 @@ public class BetterFontRenderer implements Constants
     }
 
     /**
+     * Trim a string so that it fits in the specified width when rendered.
+     *
+     * @param str the String to trim
+     * @param width the desired string width (in GUI coordinate system)
+     * @return the trimmed and optionally reversed string
+     */
+    public String trimStringToWidth(String str, int width)
+    {
+        return trimStringToWidth(str, width, false);
+    }
+
+    /**
      * Trim a string so that it fits in the specified width when rendered, optionally reversing the string
      *
      * @param str the String to trim
@@ -588,6 +641,52 @@ public class BetterFontRenderer implements Constants
         }
 
         return str;
+    }
+
+    public List<String> listFormattedStringToWidth(String str, int wrapWidth)
+    {
+        final List<String> lines = new ArrayList<>();
+
+        String remaining = str;
+        do
+        {
+            final int lineEnd = sizeStringToWidth(remaining, wrapWidth);
+
+            final String line = remaining.substring(0, lineEnd);
+            lines.add(line);
+
+            final boolean isWhitespace = lineEnd < remaining.length() &&
+                    (remaining.charAt(lineEnd) == ' ' || remaining.charAt(lineEnd) == '\n');
+            remaining = getFormatFromString(remaining) + remaining.substring(lineEnd + (isWhitespace ? 1 : 0));
+        }
+        while(!remaining.isEmpty());
+
+        return lines;
+    }
+
+    private String getFormatFromString(String str)
+    {
+        final StringBuilder sb = new StringBuilder();
+        int start = 0, next;
+
+        /* Search for section mark characters indicating the start of a color code (but only if followed by at least one character) */
+        while((next = str.indexOf('\u00A7', start)) != -1 && next + 1 < str.length())
+        {
+            char ch = str.charAt(next + 1);
+            int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(ch));
+
+            if(code != -1) // isColor || isFormatSpecial
+            {
+                if(code <= 15) // isColor
+                    sb.setLength(0); // This may be a bug in Minecraft's original FontRenderer
+                sb.append('\u00A7').append(ch);
+            }
+
+            /* Resume search for section marks after skipping this one */
+            start = next + 2;
+        }
+
+        return sb.toString();
     }
 
     /**
