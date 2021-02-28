@@ -49,7 +49,7 @@ public class BetterFontRenderer implements Constants
      */
     private final int[] colorTable;
 
-    /** Random used for the random style in {@link #renderString(String, int, int, int, boolean)} */
+    /** Random used for the random style in {@link #renderString(String, float, float, int, boolean)} */
     private final Random fontRandom = new Random();
 
     private int cachedTexMinFilter, cachedTexMagFilter;
@@ -99,14 +99,14 @@ public class BetterFontRenderer implements Constants
         return fontCache.getFonts();
     }
 
-    public int drawString(String text, int startX, int startY, int initialColor, boolean dropShadow)
+    public float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow)
     {
         oglService.glEnable(GL11.GL_ALPHA);
 
         if(dropShadow)
         {
-            int newX;
-            newX = renderString(text, startX + 1, startY + 1, adjustColor(initialColor, true), true);
+            float newX;
+            newX = renderString(text, startX + 1.0F, startY + 1.0F, adjustColor(initialColor, true), true);
             newX = Math.max(newX, renderString(text, startX, startY, adjustColor(initialColor, false), false));
             return newX;
         }
@@ -145,7 +145,7 @@ public class BetterFontRenderer implements Constants
      *
      * @todo Add optional NumericShaper to replace ASCII digits with locale specific ones
      */
-    public int renderString(String str, int startX, int startY, int initialColor, boolean shadowFlag)
+    public float renderString(String str, float startX, float startY, int initialColor, boolean shadowFlag)
     {
         /* Check for invalid arguments */
         if(str == null || str.isEmpty())
@@ -248,14 +248,14 @@ public class BetterFontRenderer implements Constants
             if((renderStyle & StringCache.ColorCode.RANDOM) != 0 && Arrays.binarySearch(RANDOM_STYLE_CHARS, c) >= 0)
             {
                 // TODO: probably shouldn't cache calls to getStringWidth() and the subsequent cacheString()
-                int oldCharWidth = getStringWidth(String.valueOf(c));
+                int oldCharWidth = Math.round(getStringWidth(String.valueOf(c)));
 
                 char newC;
                 do {
                     int charPos = fontRandom.nextInt(RANDOM_STYLE_CHARS.length);
                     newC = RANDOM_STYLE_CHARS[charPos];
                 }
-                while(oldCharWidth == getStringWidth(String.valueOf(newC)));
+                while(oldCharWidth == Math.round(getStringWidth(String.valueOf(newC))));
 
                 texture = stringCache.cacheString(String.valueOf(newC)).sortedGlyphs[0].texture;
             }
@@ -350,7 +350,7 @@ public class BetterFontRenderer implements Constants
         restoreMipmapping();
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return Math.round(entry.advance);
+        return entry.advance;
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
@@ -403,7 +403,7 @@ public class BetterFontRenderer implements Constants
      * @param str compute the width of this string
      * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
      */
-    public int getStringWidth(String str)
+    public float getStringWidth(String str)
     {
         /* Check for invalid arguments */
         if(str == null || str.isEmpty())
@@ -415,7 +415,7 @@ public class BetterFontRenderer implements Constants
         StringCache.Entry entry = stringCache.cacheString(str);
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return Math.round(entry.advance);
+        return entry.advance;
     }
 
     /**
@@ -424,7 +424,7 @@ public class BetterFontRenderer implements Constants
      * @param character compute the width of this character
      * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
      */
-    public int getCharWidth(char character)
+    public float getCharWidth(char character)
     {
         return getStringWidth(String.valueOf(character));
     }
