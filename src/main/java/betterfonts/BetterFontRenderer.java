@@ -543,7 +543,7 @@ public class BetterFontRenderer implements Constants
      * @param breakAtSpaces set to prefer breaking line at spaces than in the middle of a word
      * @return the number of characters from str that will fit inside width
      */
-    public int sizeString(String str, int width, boolean breakAtSpaces)
+    public int sizeString(String str, float width, boolean breakAtSpaces)
     {
         /* Check for invalid arguments */
         if(str == null || str.isEmpty())
@@ -602,7 +602,7 @@ public class BetterFontRenderer implements Constants
      * @param width the desired string width (in GUI coordinate system)
      * @return the number of characters from str that will fit inside width
      */
-    public int sizeStringToWidth(String str, int width)
+    public int sizeStringToWidth(String str, float width)
     {
         return sizeString(str, width, true);
     }
@@ -614,7 +614,7 @@ public class BetterFontRenderer implements Constants
      * @param width the desired string width (in GUI coordinate system)
      * @return the trimmed and optionally reversed string
      */
-    public String trimStringToWidth(String str, int width)
+    public String trimStringToWidth(String str, float width)
     {
         return trimStringToWidth(str, width, false);
     }
@@ -627,7 +627,7 @@ public class BetterFontRenderer implements Constants
      * @param reverse if true, the returned string will also be reversed
      * @return the trimmed and optionally reversed string
      */
-    public String trimStringToWidth(String str, int width, boolean reverse)
+    public String trimStringToWidth(String str, float width, boolean reverse)
     {
         if (reverse)
             str = new StringBuilder(str).reverse().toString();
@@ -643,7 +643,7 @@ public class BetterFontRenderer implements Constants
         return str;
     }
 
-    public List<String> listFormattedStringToWidth(String str, int wrapWidth)
+    public List<String> listFormattedStringToWidth(String str, float wrapWidth)
     {
         final List<String> lines = new ArrayList<>();
 
