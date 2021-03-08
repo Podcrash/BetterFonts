@@ -8,7 +8,7 @@ tasks.withType<Wrapper>().configureEach {
 }
 
 group = "betterfonts"
-version = "2.0.0-SNAPSHOT.2"
+version = "2.0.0-SNAPSHOT.3"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
