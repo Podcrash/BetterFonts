@@ -1,6 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
+ * Copyright (C) 2021 Podcrash Ltd
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -14,7 +15,7 @@
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>..
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package betterfonts;
