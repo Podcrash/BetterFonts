@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
 {
@@ -86,13 +87,16 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     }
 
     @Override
-    public BetterFontRendererFactory useSystemFonts(int pointSize)
+    public BetterFontRendererFactory useSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts)
     {
+        final GraphicsEnvironment graphicsEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        graphicsEnv.preferLocaleFonts();
         /* Use Java's logical font as the default initial font if user does not override it */
-        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
-        fonts.add(new OpenTypeFont(oglService, new java.awt.Font(java.awt.Font.SANS_SERIF, Font.PLAIN, pointSize), Baseline.MINECRAFT));
-        fonts.addAll(Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts())
-                .map(f -> new OpenTypeFont(oglService, f.deriveFont(f.getStyle(), pointSize), Baseline.MINECRAFT))
+        final java.awt.Font javaLogicalFont = new java.awt.Font(java.awt.Font.SANS_SERIF, Font.PLAIN, 1);
+        fonts.addAll(Stream
+                .concat(Stream.of(javaLogicalFont),
+                        Arrays.stream(graphicsEnv.getAllFonts()).filter(font -> !font.equals(javaLogicalFont)))
+                .map(font -> ((AwtBuilderImpl) openTypeFonts.apply(new AwtBuilderImpl(font))).getFont())
                 .collect(Collectors.toList()));
         return this;
     }
@@ -142,6 +146,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
 
     private class AwtBuilderImpl implements AwtBuilder<AwtBuilderImpl, AwtBuilderImpl>, AwtBuilderEnd<AwtBuilderImpl>
     {
+        private final java.awt.Font font;
         private final String name;
         private final Supplier<InputStream> inputStream;
         private final Integer inputStreamFormat;
@@ -155,9 +160,18 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         private Integer kerning;
         private Integer ligatures;
 
+        public AwtBuilderImpl(java.awt.Font font)
+        {
+            this.font = font;
+            this.name = null;
+            this.inputStream = null;
+            this.inputStreamFormat = null;
+        }
+
         public AwtBuilderImpl(String name)
         {
             this.name = name;
+            this.font = null;
             this.inputStream = null;
             this.inputStreamFormat = null;
         }
@@ -166,6 +180,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         {
             this.inputStream = inputStream;
             this.inputStreamFormat = inputStreamFormat;
+            this.font = null;
             this.name = null;
         }
 
@@ -253,7 +268,11 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
         private java.awt.Font getAwtFont(int size)
         {
             final java.awt.Font font;
-            if(name != null)
+            if(this.font != null)
+            {
+                font = this.font.deriveFont(Font.PLAIN, size);
+            }
+            else if(name != null)
             {
                 font = new java.awt.Font(name, Font.PLAIN, size);
             }

@@ -39,7 +39,7 @@ public interface BetterFontRendererFactory extends BetterFontConditionalClauses.
 
     BetterFontRendererFactory withFonts(Collection<Font> fonts);
 
-    BetterFontRendererFactory useSystemFonts(int pointSize);
+    BetterFontRendererFactory useSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts);
 
     BetterFontRendererFactory withOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
