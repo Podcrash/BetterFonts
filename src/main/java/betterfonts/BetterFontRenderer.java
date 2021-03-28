@@ -201,7 +201,7 @@ public class BetterFontRenderer implements Constants
          * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
          */
-        oglService.glColor3f(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff);
+        oglService.glColor3f((color >> 16 & 0xff) / 255f, (color >> 8 & 0xff) / 255f, (color & 0xff) / 255f);
 
         /* Save the blending state */
         boolean wasBlendEnabled = oglService.glIsEnabled(GL11.GL_BLEND);
