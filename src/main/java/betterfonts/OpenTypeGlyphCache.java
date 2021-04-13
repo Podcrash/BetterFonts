@@ -68,11 +68,19 @@ class OpenTypeGlyphCache
     private static final int STRING_HEIGHT = 64;
 
     /**
+     * The width in pixels of a transparent border between individual glyphs in the cache texture.
+     * This border is used because OpenJDK builds return inaccurate font advancement information,
+     * causing glyphs to be cut when copied to the OpenGL texture.
+     * This border therefore is a margin added where OpenJDK could potentially still draw the glyph
+     * and which will be copied over in the OpenGL texture, but not accounted for in the glyph layout.
+     */
+    private static final int GLYPH_SIZE_ADJUSTMENT = 1;
+    /**
      * The width in pixels of a transparent border between individual glyphs in the cache texture. This border keeps neighboring
      * glyphs from "bleeding through" when the scaled GUI resolution is not pixel aligned and sometimes results in off-by-one
      * sampling of the glyph cache textures.
      */
-    private static final int GLYPH_BORDER = 1;
+    private static final int GLYPH_BORDER = 1 + GLYPH_SIZE_ADJUSTMENT;
 
     /** Transparent (alpha zero) white background color for use with BufferedImage.clearRect(). */
     private static final Color BACK_COLOR = new Color(255, 255, 255, 0);
@@ -282,7 +290,9 @@ class OpenTypeGlyphCache
                 for(int i = 0; i < numGlyphs; i++)
                 {
                     Point2D pos = vector.getGlyphPosition(i);
-                    pos.setLocation(pos.getX() + 2 * i, pos.getY());
+                    pos.setLocation(
+                            pos.getX() + (2 + 1 + GLYPH_SIZE_ADJUSTMENT) * i,
+                            pos.getY() + GLYPH_SIZE_ADJUSTMENT);
                     vector.setGlyphPosition(i, pos);
                 }
 
@@ -293,6 +303,7 @@ class OpenTypeGlyphCache
                  * horizontal bearing (e.g. U+0423 Cyrillic uppercase letter U on Windows 7).
                  */
                 vectorBounds = vector.getPixelBounds(fontRenderContext, 0, 0);
+                vectorBounds.setBounds(vectorBounds.x, vectorBounds.y, vectorBounds.width + GLYPH_SIZE_ADJUSTMENT, vectorBounds.height + GLYPH_SIZE_ADJUSTMENT);
 
                 /* Enlarge the stringImage if it is too small to store the entire rendered string */
                 if(stringImage == null || vectorBounds.width > stringImage.getWidth() || vectorBounds.height > stringImage.getHeight())
@@ -316,6 +327,12 @@ class OpenTypeGlyphCache
              * for extracting the glyph's image from the rendered string.
              */
             Rectangle rect = vector.getGlyphPixelBounds(index, null, -vectorBounds.x, -vectorBounds.y);
+            /* Adjust the bounds to account for OpenJDK returning wrong information */
+            rect.setBounds(
+                    rect.x - GLYPH_SIZE_ADJUSTMENT,
+                    rect.y - GLYPH_SIZE_ADJUSTMENT,
+                    rect.width + 2 * GLYPH_SIZE_ADJUSTMENT,
+                    rect.height + 2 * GLYPH_SIZE_ADJUSTMENT);
 
             /* If the current line in cache image is full, then advance to the next line */
             if(cachePosX + rect.width + GLYPH_BORDER > TEXTURE_WIDTH)
