@@ -78,7 +78,7 @@ public class BetterFontRenderer implements Constants
     private float cachedTexMaxLevel, cachedTexLodBias;
 
     /** If true, then enable GL_BLEND in renderString() so anti-aliasing font glyphs show up properly. */
-    private final boolean antiAliasEnabled;
+    private boolean antiAliasEnabled;
 
     /**
      * A single BetterFontRenderer object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -112,9 +112,24 @@ public class BetterFontRenderer implements Constants
         this.fontCache = new FontCache(fonts);
         this.stringCache = new StringCache(oglService, fontCache);
 
+        setAntiAlias(antiAlias);
+    }
+
+    public void setAntiAlias(boolean antiAlias)
+    {
         this.antiAliasEnabled = antiAlias;
         if(openTypeGlyphCache != null)
             openTypeGlyphCache.setAntiAlias(antiAlias);
+        /* Antialiasing changed, invalidate caches */
+        invalidate();
+    }
+
+    public void invalidate()
+    {
+        if(openTypeGlyphCache != null)
+            openTypeGlyphCache.invalidate();
+        /* Make sure to invalidate it after the GlyphCache */
+        stringCache.invalidate();
     }
 
     public List<Font> getFonts() {

@@ -63,6 +63,8 @@ public interface OglService {
 
     int glGenTextures();
 
+    void glDeleteTextures(int texture);
+
     void glBindTexture(int target, int texture);
 
     void glTexImage2D(int target, int level, int internalFormat, int width, int height, int border, int format, int type, IntBuffer pixels);

@@ -33,6 +33,7 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 /**
@@ -167,6 +168,22 @@ class OpenTypeGlyphCache
 
         /* The drawImage() to this buffer will copy all source pixels instead of alpha blending them into the current image */
         glyphCacheGraphics.setComposite(AlphaComposite.Src);
+
+        allocateGlyphCacheTexture();
+        allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
+    }
+
+    public void invalidate()
+    {
+        final int[] textures = glyphCache.values().stream()
+                .mapToInt(g -> g.textureName)
+                .distinct()
+                .toArray();
+
+        fontCache.clear();
+        glyphCache.clear();
+
+        Arrays.stream(textures).forEach(oglService::glDeleteTextures);
 
         allocateGlyphCacheTexture();
         allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
