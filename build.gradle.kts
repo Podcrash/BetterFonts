@@ -8,7 +8,7 @@ tasks.withType<Wrapper>().configureEach {
 }
 
 group = "betterfonts"
-version = "2.0.0-SNAPSHOT.4"
+version = "2.0.0-SNAPSHOT.5"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -59,12 +59,12 @@ tasks.withType<Test>().configureEach {
 
 publishing {
     repositories {
-        if (!project.version.toString().contains("SNAPSHOT") &&
-            project.ext.has("podcrashMavenUsername") &&
-            project.ext.has("podcrashMavenPassword")
-        ) {
+        if (project.ext.has("podcrashMavenUsername") && project.ext.has("podcrashMavenPassword")) {
             maven {
-                setUrl("https://maven.podcrash.com/repository/plus")
+                setUrl(if(!project.version.toString().contains("SNAPSHOT"))
+                    "https://maven.podcrash.com/repository/plus"
+                else
+                    "https://maven.podcrash.com/repository/plus-snapshot")
                 credentials {
                     username = project.ext.get("podcrashMavenUsername") as String?
                     password = project.ext.get("podcrashMavenPassword") as String?
