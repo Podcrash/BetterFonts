@@ -98,19 +98,10 @@ public class BetterFontRenderer implements Constants
          * used by multiple FontRenderers (then good luck understanding when we need to destroy it)
          * or shared across fonts when they are derived.
          */
-        OpenTypeGlyphCache openTypeGlyphCache = null;
-        for(Font font : fonts)
-        {
-           if(!(font instanceof OpenTypeFont))
-               continue;
-
-           if(openTypeGlyphCache == null)
-               openTypeGlyphCache = new OpenTypeGlyphCache(oglService);
-            ((OpenTypeFont) font).setGlyphCache(openTypeGlyphCache);
-        }
-        this.openTypeGlyphCache = openTypeGlyphCache;
+        final boolean createOpenTypeGlyphCache = fonts.stream().anyMatch(OpenTypeFont.class::isInstance);
+        this.openTypeGlyphCache = createOpenTypeGlyphCache ? new OpenTypeGlyphCache(oglService) : null;
         this.fontCache = new FontCache(fonts);
-        this.stringCache = new StringCache(oglService, fontCache);
+        this.stringCache = new StringCache(oglService, fontCache, openTypeGlyphCache);
 
         setAntiAlias(antiAlias);
     }

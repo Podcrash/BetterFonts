@@ -37,8 +37,6 @@ class BitmapUnifont extends BaseBitmapFont
 
     private static final float GLYPH_RENDER_BORDER = 0.02F;
 
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
     /** Supplier which returns a page bitmaps given his number */
     private final IntFunction<InputStream> pageSupplier;
 
@@ -60,26 +58,23 @@ class BitmapUnifont extends BaseBitmapFont
      * @param style style of this font
      * @param size size of this font
      */
-    public BitmapUnifont(OglService oglService,
-                         Supplier<InputStream> glyphSizes,
+    public BitmapUnifont(Supplier<InputStream> glyphSizes,
                          IntFunction<InputStream> pageSupplier,
                          String name, int style, float size)
     {
-        this(oglService, readGlyphWidths(glyphSizes, new byte[65536]), pageSupplier, new HashMap<>(), name, style, size);
+        this(readGlyphWidths(glyphSizes, new byte[65536]), pageSupplier, new HashMap<>(), name, style, size);
     }
 
     /**
      * Method used internally to derive a font.
      * This allows sharing the glyph size and the page cache between derived fonts.
      */
-    private BitmapUnifont(OglService oglService,
-                          byte[] glyphSizes,
+    private BitmapUnifont(byte[] glyphSizes,
                           IntFunction<InputStream> pageSupplier,
                           Map<Integer, Bitmap> pageCache,
                           String name, int style, float size)
     {
         super(style, size);
-        this.oglService = oglService;
         this.glyphSizes = glyphSizes;
         this.pageSupplier = pageSupplier;
         this.pageCache = pageCache;
@@ -102,7 +97,7 @@ class BitmapUnifont extends BaseBitmapFont
         }
     }
 
-    private Bitmap loadPageTexture(int i)
+    private Bitmap loadPageTexture(OglService oglService, int i)
     {
         // TODO: this is never ever invalidated or cleared, we probably should at some point
         Bitmap texture = pageCache.get(i);
@@ -157,9 +152,9 @@ class BitmapUnifont extends BaseBitmapFont
     }
 
     @Override
-    protected Bitmap loadBitmap(char ch)
+    protected Bitmap loadBitmap(OglService oglService, char ch)
     {
-        return loadPageTexture(ch / CHARACTERS_PER_PAGE);
+        return loadPageTexture(oglService, ch / CHARACTERS_PER_PAGE);
     }
 
     @Override
@@ -213,6 +208,6 @@ class BitmapUnifont extends BaseBitmapFont
     @Override
     public FontInternal deriveFont(int style, float size)
     {
-        return new BitmapUnifont(oglService, glyphSizes, pageSupplier, pageCache, name, style, size);
+        return new BitmapUnifont(glyphSizes, pageSupplier, pageCache, name, style, size);
     }
 }

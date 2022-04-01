@@ -52,14 +52,11 @@ class BitmapAsciiFont extends BaseBitmapFont
 
     private static final float GLYPH_RENDER_BORDER = 0.01F;
 
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
-
     /** Arbitrary name used to identify this font */
     private final String name;
 
     /** Bitmap used for rendering glyphs */
-    private final Bitmap bitmap;
+    private final LazyBitmap bitmap;
     /** Width for each singular glyphs */
     public int[] glyphWidths;
 
@@ -72,26 +69,27 @@ class BitmapAsciiFont extends BaseBitmapFont
      * @param style style of this font
      * @param size size of this font
      */
-    public BitmapAsciiFont(OglService oglService, Supplier<InputStream> bitmap, String name, int style, float size)
+    public BitmapAsciiFont(Supplier<InputStream> bitmap, String name, int style, float size)
     {
-        this(oglService, loadBitmapImage(bitmap), name, style, size);
+        this(loadBitmapImage(bitmap), name, style, size);
     }
 
     /** Bridge constructor to be able to load the bufferedImage once */
-    private BitmapAsciiFont(OglService oglService,
-                            BufferedImage bitmap,
+    private BitmapAsciiFont(BufferedImage bitmap,
                             String name, int style, float size)
     {
-        this(oglService, readBitmap(oglService, bitmap), readGlyphWidths(bitmap, bitmap.getWidth(), bitmap.getHeight()), name, style, size);
+        this(
+                new LazyBitmap(oglService -> readBitmap(oglService, bitmap)),
+                readGlyphWidths(bitmap, bitmap.getWidth(), bitmap.getHeight()),
+                name, style, size
+        );
     }
 
     /** Constructor used internally which allows sharing the bitmap between derived fonts */
-    private BitmapAsciiFont(OglService oglService,
-                            Bitmap bitmap, int[] glyphWidths,
+    private BitmapAsciiFont(LazyBitmap bitmap, int[] glyphWidths,
                             String name, int style, float size)
     {
         super(style, size);
-        this.oglService = oglService;
         this.bitmap = bitmap;
         this.glyphWidths = glyphWidths;
         this.name = name;
@@ -192,9 +190,9 @@ class BitmapAsciiFont extends BaseBitmapFont
     }
 
     @Override
-    protected BaseBitmapFont.Bitmap loadBitmap(char ch)
+    protected BaseBitmapFont.Bitmap loadBitmap(OglService oglService, char ch)
     {
-        return bitmap;
+        return bitmap.get(oglService);
     }
 
     private int charToIndex(char ch) {
@@ -248,6 +246,6 @@ class BitmapAsciiFont extends BaseBitmapFont
     @Override
     public FontInternal deriveFont(int style, float size)
     {
-        return new BitmapAsciiFont(oglService, bitmap, glyphWidths, name, style, size);
+        return new BitmapAsciiFont(bitmap, glyphWidths, name, style, size);
     }
 }

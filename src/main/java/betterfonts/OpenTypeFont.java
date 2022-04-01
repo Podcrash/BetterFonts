@@ -30,12 +30,6 @@ import java.util.stream.IntStream;
 
 class OpenTypeFont implements FontInternal, Constants
 {
-    /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
-    private OpenTypeGlyphCache glyphCache;
-
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
-
     /** Actual underlying java Font */
     private final java.awt.Font font;
 
@@ -43,34 +37,26 @@ class OpenTypeFont implements FontInternal, Constants
     private final float customBaseline;
     private Float commonCharsBaseline;
 
-    public OpenTypeFont(OglService oglService,
-                        java.awt.Font font,
-                        BetterFontRendererFactory.Baseline baseline)
+    public OpenTypeFont(java.awt.Font font, BetterFontRendererFactory.Baseline baseline)
     {
-        this(oglService, null, font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
+        this(font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
     }
 
-    public OpenTypeFont(OglService oglService,
-                        java.awt.Font font,
-                        float baseline)
+    public OpenTypeFont(java.awt.Font font, float baseline)
     {
-        this(oglService, null, font, null, baseline);
+        this(font, null, baseline);
     }
 
-    private OpenTypeFont(OglService oglService,
-                         OpenTypeGlyphCache glyphCache,
-                         java.awt.Font font,
+    private OpenTypeFont(java.awt.Font font,
                          BetterFontRendererFactory.Baseline baseline,
                          float customBaseline)
     {
-        this.oglService = oglService;
-        this.glyphCache = glyphCache;
         this.font = font;
         this.baseline = baseline;
         this.customBaseline = customBaseline;
     }
 
-    private float getCommonCharsBaseline()
+    private float getCommonCharsBaseline(OpenTypeGlyphCache glyphCache)
     {
         if(commonCharsBaseline == null)
         {
@@ -87,17 +73,6 @@ class OpenTypeFont implements FontInternal, Constants
                     .orElse(0);
         }
         return commonCharsBaseline;
-    }
-
-    void setGlyphCache(OpenTypeGlyphCache glyphCache)
-    {
-        this.glyphCache = glyphCache;
-    }
-
-    private void ensureGlyphCache()
-    {
-        if(glyphCache == null)
-            throw new AssertionError("GlyphCache hasn't been set yet");
     }
 
     @Override
@@ -140,10 +115,11 @@ class OpenTypeFont implements FontInternal, Constants
     }
 
     @Override
-    public float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance)
+    public float layoutFont(OglService oglService,
+                            OpenTypeGlyphCache glyphCache,
+                            List<Glyph> glyphList,
+                            char[] text, int start, int limit, int layoutFlags, float advance)
     {
-        ensureGlyphCache();
-
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
          * main thread because cacheGlyphs() can crash LWJGL if it makes OpenGL calls from any other thread. In this case,
@@ -201,7 +177,7 @@ class OpenTypeFont implements FontInternal, Constants
                     // @formatter:off
                     case MINECRAFT: glyph.ascent = MINECRAFT_BASELINE_OFFSET; break;
                     case AWT: glyph.ascent = lineMetrics.getAscent() * MINECRAFT_SCALE_FACTOR; break;
-                    case COMMON_CHARS: glyph.ascent = getCommonCharsBaseline() * MINECRAFT_SCALE_FACTOR; break;
+                    case COMMON_CHARS: glyph.ascent = getCommonCharsBaseline(glyphCache) * MINECRAFT_SCALE_FACTOR; break;
                     // @formatter:on
                     default:
                         throw new AssertionError("Unsupported baseline type " + baseline);
@@ -229,7 +205,7 @@ class OpenTypeFont implements FontInternal, Constants
                 font.deriveFont(style, size) :
                 // Need to preserve the weight and posture, cause deriveFont(style) overrides it
                 font.deriveFont(style, size).deriveFont(font.getAttributes());
-        return new OpenTypeFont(oglService, glyphCache, derived, baseline, customBaseline);
+        return new OpenTypeFont(derived, baseline, customBaseline);
     }
 
     @Override

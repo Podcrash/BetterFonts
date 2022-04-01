@@ -62,6 +62,9 @@ class StringCache
     /** Service used to make OpenGL calls */
     private final FontCache fontCache;
 
+    /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
+    private final OpenTypeGlyphCache openTypeGlyphCache;
+
     /**
      * A cache of recently seen strings to their fully layed-out state, complete with color changes and texture coordinates of
      * all pre-rendered glyph images needed to display this string. The weakRefCache holds strong references to the Key
@@ -273,10 +276,11 @@ class StringCache
         }
     }
 
-    public StringCache(OglService oglService, FontCache fontCache)
+    public StringCache(OglService oglService, FontCache fontCache, OpenTypeGlyphCache openTypeGlyphCache)
     {
         this.oglService = oglService;
         this.fontCache = fontCache;
+        this.openTypeGlyphCache = openTypeGlyphCache;
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         cacheDigitGlyphs();
@@ -719,7 +723,7 @@ class StringCache
             final AtomicInteger limitPtr = new AtomicInteger(limit);
             FontInternal font = fontCache.lookupFont(text, start, limitPtr, style);
             /* limitPtr is updated with the limit at which this Font should stop rendering */
-            advance = font.layoutFont(glyphList, text, start, limitPtr.get(), layoutFlags, advance);
+            advance = font.layoutFont(oglService, openTypeGlyphCache, glyphList, text, start, limitPtr.get(), layoutFlags, advance);
             start = limitPtr.get();
         }
 

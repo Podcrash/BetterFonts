@@ -20,6 +20,7 @@
 package betterfonts;
 
 import java.util.List;
+import java.util.function.Function;
 
 public abstract class BaseBitmapFont implements FontInternal, Constants
 {
@@ -52,6 +53,24 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
         public int gridCellWidth;
     }
 
+    protected static class LazyBitmap
+    {
+        private Function<OglService, Bitmap> create;
+        private Bitmap bitmap;
+
+        public LazyBitmap(Function<OglService, Bitmap> create) {
+            this.create = create;
+        }
+
+        public Bitmap get(OglService oglService) {
+            if(bitmap == null) {
+                bitmap = create.apply(oglService);
+                create = null;
+            }
+            return bitmap;
+        }
+    }
+
     @Override
     public int getSize()
     {
@@ -64,7 +83,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
         return style;
     }
 
-    protected abstract Bitmap loadBitmap(char ch);
+    protected abstract Bitmap loadBitmap(OglService oglService, char ch);
 
     protected abstract int texturePosX(Bitmap bitmap, char ch);
 
@@ -81,7 +100,10 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
     protected abstract int glyphGap();
 
     @Override
-    public float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, final float advance)
+    public float layoutFont(OglService oglService,
+                            OpenTypeGlyphCache openTypeGlyphCache,
+                            List<Glyph> glyphList,
+                            char[] text, int start, int limit, int layoutFlags, float advance)
     {
         float newAdvance = advance;
         for(int i = start; i < limit; i++)
@@ -93,7 +115,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
                 continue;
             }
 
-            final Bitmap bitmap = loadBitmap(ch);
+            final Bitmap bitmap = loadBitmap(oglService, ch);
 
             final int texturePosX = texturePosX(bitmap, ch);
             final int texturePosY = texturePosY(bitmap, ch);
