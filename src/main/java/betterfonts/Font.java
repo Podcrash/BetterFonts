@@ -19,6 +19,16 @@
 
 package betterfonts;
 
+import betterfonts.FontFactory.AwtBuilder;
+import betterfonts.FontFactory.AwtBuilderEnd;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+
+@SuppressWarnings("unused")
 public interface Font
 {
     /** The plain style constant */
@@ -33,6 +43,47 @@ public interface Font
      * style constants (except PLAIN) for mixed styles.
      */
     int ITALIC = java.awt.Font.ITALIC;
+
+    enum Baseline
+    {
+        /** Uses the default Minecraft baseline (7 units from the top) */
+        MINECRAFT,
+        /** Uses the baseline calculated by awt */
+        AWT,
+        /** Calculates the baseline by laying out the most common characters */
+        COMMON_CHARS
+    }
+
+    static List<Font> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts)
+    {
+        return FontFactoryImpl.INSTANCE.createSystemFonts(openTypeFonts);
+    }
+
+    static Font createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    {
+        return FontFactoryImpl.INSTANCE.createOpenTypeFont(name, openTypeFont);
+    }
+
+    static Font createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    {
+        return FontFactoryImpl.INSTANCE.createOpenTypeFont(is, openTypeFont);
+    }
+
+    static Font createAwtFont(Supplier<InputStream> is,
+                              int fontFormat,
+                              Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont) {
+        return FontFactoryImpl.INSTANCE.createAwtFont(is, fontFormat, openTypeFont);
+    }
+
+    static Font createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size)
+    {
+        return FontFactoryImpl.INSTANCE.createBitmapAsciiFont(name, bitmap, size);
+    }
+
+    static Font createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size)
+    {
+        return FontFactoryImpl.INSTANCE.createBitmapUnifont(name, glyphSizes, pageSupplier, size);
+    }
 
     /** @return the font face name of this Font */
     String getName();

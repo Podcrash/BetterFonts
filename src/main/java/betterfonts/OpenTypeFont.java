@@ -33,11 +33,11 @@ class OpenTypeFont implements FontInternal, Constants
     /** Actual underlying java Font */
     private final java.awt.Font font;
 
-    private final BetterFontRendererFactory.Baseline baseline;
+    private final Font.Baseline baseline;
     private final float customBaseline;
     private Float commonCharsBaseline;
 
-    public OpenTypeFont(java.awt.Font font, BetterFontRendererFactory.Baseline baseline)
+    public OpenTypeFont(java.awt.Font font, Font.Baseline baseline)
     {
         this(font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
     }
@@ -48,7 +48,7 @@ class OpenTypeFont implements FontInternal, Constants
     }
 
     private OpenTypeFont(java.awt.Font font,
-                         BetterFontRendererFactory.Baseline baseline,
+                         Font.Baseline baseline,
                          float customBaseline)
     {
         this.font = font;

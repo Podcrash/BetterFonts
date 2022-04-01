@@ -19,6 +19,9 @@
 
 package betterfonts;
 
+import betterfonts.FontFactory.AwtBuilder;
+import betterfonts.FontFactory.AwtBuilderEnd;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.function.Function;
@@ -52,36 +55,4 @@ public interface BetterFontRendererFactory extends BetterFontConditionalClauses.
     BetterFontRendererFactory withBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size);
 
     BetterFontRenderer build();
-
-    interface AwtBuilder<R extends AwtBuilderEnd<R>, T extends AwtBuilder<R, T>> extends BetterFontConditionalClauses.ReturnDiffType<T, R>
-    {
-        R fromPointSize(int pointSize);
-
-        R fromHeight(float height);
-    }
-
-    interface AwtBuilderEnd<T extends AwtBuilderEnd<T>> extends BetterFontConditionalClauses.ReturnSameType<T>
-    {
-        T withBaseline(float baseline);
-
-        T withBaseline(Baseline baseline);
-
-        T withWeight(float weight);
-
-        T withPosture(float posture);
-
-        T withKerning(boolean kerning);
-
-        T withLigatures(boolean ligatures);
-    }
-
-    enum Baseline
-    {
-        /** Uses the default Minecraft baseline (7 units from the top) */
-        MINECRAFT,
-        /** Uses the baseline calculated by awt */
-        AWT,
-        /** Calculates the baseline by laying out the most common characters */
-        COMMON_CHARS
-    }
 }
