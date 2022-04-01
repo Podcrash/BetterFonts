@@ -62,8 +62,8 @@ public class BetterFontRenderer implements Constants
     /** Cache used to save layed out glyphs to be subsequently reused */
     private final StringCache stringCache;
 
-    /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
-    private final OpenTypeGlyphCache openTypeGlyphCache;
+    /** Caches needed for creating GlyphVectors and retrieving glyph texture coordinates. */
+    private final GlyphCaches glyphCaches;
 
     /**
      * Color codes from original FontRender class. First 16 entries are the primary chat colors; second 16 are darker versions
@@ -99,9 +99,9 @@ public class BetterFontRenderer implements Constants
          * or shared across fonts when they are derived.
          */
         final boolean createOpenTypeGlyphCache = fonts.stream().anyMatch(OpenTypeFont.class::isInstance);
-        this.openTypeGlyphCache = createOpenTypeGlyphCache ? new OpenTypeGlyphCache(oglService) : null;
+        this.glyphCaches = new GlyphCaches(oglService, createOpenTypeGlyphCache);
         this.fontCache = new FontCache(fonts);
-        this.stringCache = new StringCache(oglService, fontCache, openTypeGlyphCache);
+        this.stringCache = new StringCache(oglService, fontCache, glyphCaches);
 
         setAntiAlias(antiAlias);
     }
@@ -109,16 +109,14 @@ public class BetterFontRenderer implements Constants
     public void setAntiAlias(boolean antiAlias)
     {
         this.antiAliasEnabled = antiAlias;
-        if(openTypeGlyphCache != null)
-            openTypeGlyphCache.setAntiAlias(antiAlias);
+        glyphCaches.setAntiAlias(antiAlias);
         /* Antialiasing changed, invalidate caches */
         invalidate();
     }
 
     public void invalidate()
     {
-        if(openTypeGlyphCache != null)
-            openTypeGlyphCache.invalidate();
+        glyphCaches.invalidate();
         /* Make sure to invalidate it after the GlyphCache */
         stringCache.invalidate();
     }

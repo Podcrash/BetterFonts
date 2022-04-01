@@ -61,7 +61,7 @@ interface FontInternal extends Font
      * string where all glyphs run contiguously in either LTR or RTL and come from the same physical/logical font.
      *
      * @param oglService service used to make OpenGL calls
-     * @param openTypeGlyphCache cache needed for creating GlyphVectors and retrieving glyph texture coordinates
+     * @param glyphCaches cache needed for creating GlyphVectors and retrieving glyph texture coordinates
      * @param glyphList all newly created Glyph objects are added to this list
      * @param text the string to layout
      * @param start the offset into text at which to start the layout
@@ -73,7 +73,7 @@ interface FontInternal extends Font
      * @todo need to adjust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
     float layoutFont(OglService oglService,
-                     OpenTypeGlyphCache openTypeGlyphCache,
+                     GlyphCaches glyphCaches,
                      List<Glyph> glyphList,
                      char[] text, int start, int limit, int layoutFlags, float advance);
 

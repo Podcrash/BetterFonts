@@ -116,10 +116,12 @@ class OpenTypeFont implements FontInternal, Constants
 
     @Override
     public float layoutFont(OglService oglService,
-                            OpenTypeGlyphCache glyphCache,
+                            GlyphCaches glyphCaches,
                             List<Glyph> glyphList,
                             char[] text, int start, int limit, int layoutFlags, float advance)
     {
+        final OpenTypeGlyphCache glyphCache = glyphCaches.ensureOpenTypeGlyphCache();
+
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
          * main thread because cacheGlyphs() can crash LWJGL if it makes OpenGL calls from any other thread. In this case,

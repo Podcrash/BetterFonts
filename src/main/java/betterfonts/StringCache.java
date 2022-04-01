@@ -63,7 +63,7 @@ class StringCache
     private final FontCache fontCache;
 
     /** Cache needed for creating GlyphVectors and retrieving glyph texture coordinates. */
-    private final OpenTypeGlyphCache openTypeGlyphCache;
+    private final GlyphCaches glyphCaches;
 
     /**
      * A cache of recently seen strings to their fully layed-out state, complete with color changes and texture coordinates of
@@ -276,11 +276,11 @@ class StringCache
         }
     }
 
-    public StringCache(OglService oglService, FontCache fontCache, OpenTypeGlyphCache openTypeGlyphCache)
+    public StringCache(OglService oglService, FontCache fontCache, GlyphCaches glyphCaches)
     {
         this.oglService = oglService;
         this.fontCache = fontCache;
-        this.openTypeGlyphCache = openTypeGlyphCache;
+        this.glyphCaches = glyphCaches;
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         cacheDigitGlyphs();
@@ -723,7 +723,7 @@ class StringCache
             final AtomicInteger limitPtr = new AtomicInteger(limit);
             FontInternal font = fontCache.lookupFont(text, start, limitPtr, style);
             /* limitPtr is updated with the limit at which this Font should stop rendering */
-            advance = font.layoutFont(oglService, openTypeGlyphCache, glyphList, text, start, limitPtr.get(), layoutFlags, advance);
+            advance = font.layoutFont(oglService, glyphCaches, glyphList, text, start, limitPtr.get(), layoutFlags, advance);
             start = limitPtr.get();
         }
 

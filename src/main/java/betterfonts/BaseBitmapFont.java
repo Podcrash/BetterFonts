@@ -101,7 +101,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
 
     @Override
     public float layoutFont(OglService oglService,
-                            OpenTypeGlyphCache openTypeGlyphCache,
+                            GlyphCaches glyphCaches,
                             List<Glyph> glyphList,
                             char[] text, int start, int limit, int layoutFlags, float advance)
     {
