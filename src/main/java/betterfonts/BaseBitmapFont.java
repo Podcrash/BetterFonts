@@ -53,24 +53,6 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
         public int gridCellWidth;
     }
 
-    protected static class LazyBitmap
-    {
-        private Function<OglService, Bitmap> create;
-        private Bitmap bitmap;
-
-        public LazyBitmap(Function<OglService, Bitmap> create) {
-            this.create = create;
-        }
-
-        public Bitmap get(OglService oglService) {
-            if(bitmap == null) {
-                bitmap = create.apply(oglService);
-                create = null;
-            }
-            return bitmap;
-        }
-    }
-
     @Override
     public int getSize()
     {

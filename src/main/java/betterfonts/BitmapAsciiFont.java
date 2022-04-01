@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -47,16 +48,21 @@ class BitmapAsciiFont extends BaseBitmapFont
                 }));
     }
 
-    private static final int GRID_ROWS = 16;
-    private static final int GRID_COLS = 16;
+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
+
+    public static final int GRID_ROWS = 16;
+    public static final int GRID_COLS = 16;
 
     private static final float GLYPH_RENDER_BORDER = 0.01F;
+
+    /** Unique identifier for the font with the given pageSupplier */
+    private final int id;
 
     /** Arbitrary name used to identify this font */
     private final String name;
 
     /** Bitmap used for rendering glyphs */
-    private final LazyBitmap bitmap;
+    private final Supplier<InputStream> bitmap;
     /** Width for each singular glyphs */
     public int[] glyphWidths;
 
@@ -71,25 +77,17 @@ class BitmapAsciiFont extends BaseBitmapFont
      */
     public BitmapAsciiFont(Supplier<InputStream> bitmap, String name, int style, float size)
     {
-        this(loadBitmapImage(bitmap), name, style, size);
-    }
-
-    /** Bridge constructor to be able to load the bufferedImage once */
-    private BitmapAsciiFont(BufferedImage bitmap,
-                            String name, int style, float size)
-    {
-        this(
-                new LazyBitmap(oglService -> readBitmap(oglService, bitmap)),
-                readGlyphWidths(bitmap, bitmap.getWidth(), bitmap.getHeight()),
-                name, style, size
-        );
+        this(ID_GENERATOR.get(), bitmap, readGlyphWidths(loadBitmapImage(bitmap)), name, style, size);
     }
 
     /** Constructor used internally which allows sharing the bitmap between derived fonts */
-    private BitmapAsciiFont(LazyBitmap bitmap, int[] glyphWidths,
+    private BitmapAsciiFont(int id,
+                            Supplier<InputStream> bitmap,
+                            int[] glyphWidths,
                             String name, int style, float size)
     {
         super(style, size);
+        this.id = id;
         this.bitmap = bitmap;
         this.glyphWidths = glyphWidths;
         this.name = name;
@@ -107,17 +105,9 @@ class BitmapAsciiFont extends BaseBitmapFont
         }
     }
 
-    private static Bitmap readBitmap(OglService oglService, BufferedImage image)
+    private static int[] readGlyphWidths(BufferedImage image)
     {
-        final Bitmap bitmap = new Bitmap();
-        bitmap.textureName = oglService.allocateTexture(image);
-        bitmap.width = image.getWidth();
-        bitmap.height = image.getHeight();
-        bitmap.gridRows = GRID_ROWS;
-        bitmap.gridCols = GRID_COLS;
-        bitmap.gridCellHeight = image.getHeight() / bitmap.gridRows;
-        bitmap.gridCellWidth = image.getWidth() / bitmap.gridCols;
-        return bitmap;
+        return readGlyphWidths(image, image.getWidth(), image.getHeight());
     }
 
     private static int[] readGlyphWidths(BufferedImage image, int bitmapWidth, int bitmapHeight)
@@ -192,7 +182,7 @@ class BitmapAsciiFont extends BaseBitmapFont
     @Override
     protected BaseBitmapFont.Bitmap loadBitmap(OglService oglService, GlyphCaches glyphCaches, char ch)
     {
-        return bitmap.get(oglService);
+        return glyphCaches.ensureBitmapAsciiFontCache().loadBitmap(id, bitmap);
     }
 
     private int charToIndex(char ch) {
@@ -246,6 +236,6 @@ class BitmapAsciiFont extends BaseBitmapFont
     @Override
     public FontInternal deriveFont(int style, float size)
     {
-        return new BitmapAsciiFont(bitmap, glyphWidths, name, style, size);
+        return new BitmapAsciiFont(id, bitmap, glyphWidths, name, style, size);
     }
 }

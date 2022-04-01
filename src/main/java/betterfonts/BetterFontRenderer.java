@@ -93,6 +93,7 @@ public class BetterFontRenderer implements Constants
         this.colorTable = colors;
         this.glyphCaches = new GlyphCaches(oglService,
                 fonts.stream().anyMatch(OpenTypeFont.class::isInstance),
+                fonts.stream().anyMatch(BitmapAsciiFont.class::isInstance),
                 fonts.stream().anyMatch(BitmapUnifont.class::isInstance));
         this.fontCache = new FontCache(fonts);
         this.stringCache = new StringCache(oglService, fontCache, glyphCaches);
