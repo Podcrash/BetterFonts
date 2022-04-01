@@ -19,29 +19,24 @@
 
 package betterfonts;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 class BitmapUnifont extends BaseBitmapFont
 {
-    private static final int GRID_ROWS = 16;
-    private static final int GRID_COLS = 16;
-    private static final int CHARACTERS_PER_PAGE = GRID_ROWS * GRID_COLS;
+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
 
     private static final float GLYPH_RENDER_BORDER = 0.02F;
 
+    /** Unique identifier for the font with the given pageSupplier */
+    private final int id;
+
     /** Supplier which returns a page bitmaps given his number */
     private final IntFunction<InputStream> pageSupplier;
-
-    /** A cache of all unicode pages that have at least one glyph rendered in a texture */
-    private final Map<Integer, Bitmap> pageCache;
 
     /** Array of the start/end column (in upper/lower nibble) for every glyph in the /font directory. */
     private final byte[] glyphSizes;
@@ -62,22 +57,22 @@ class BitmapUnifont extends BaseBitmapFont
                          IntFunction<InputStream> pageSupplier,
                          String name, int style, float size)
     {
-        this(readGlyphWidths(glyphSizes, new byte[65536]), pageSupplier, new HashMap<>(), name, style, size);
+        this(ID_GENERATOR.get(), readGlyphWidths(glyphSizes, new byte[65536]), pageSupplier, name, style, size);
     }
 
     /**
      * Method used internally to derive a font.
      * This allows sharing the glyph size and the page cache between derived fonts.
      */
-    private BitmapUnifont(byte[] glyphSizes,
+    private BitmapUnifont(int id,
+                          byte[] glyphSizes,
                           IntFunction<InputStream> pageSupplier,
-                          Map<Integer, Bitmap> pageCache,
                           String name, int style, float size)
     {
         super(style, size);
+        this.id = id;
         this.glyphSizes = glyphSizes;
         this.pageSupplier = pageSupplier;
-        this.pageCache = pageCache;
         this.name = name;
     }
 
@@ -95,36 +90,6 @@ class BitmapUnifont extends BaseBitmapFont
         {
             throw new UncheckedIOException(ex);
         }
-    }
-
-    private Bitmap loadPageTexture(OglService oglService, int i)
-    {
-        // TODO: this is never ever invalidated or cleared, we probably should at some point
-        Bitmap texture = pageCache.get(i);
-        if(texture != null)
-            return texture;
-
-        final BufferedImage image;
-        try(InputStream is = pageSupplier.apply(i))
-        {
-            image = ImageIO.read(is);
-        }
-        catch (IOException ex)
-        {
-            throw new UncheckedIOException(ex);
-        }
-
-        texture = new Bitmap();
-        texture.textureName = oglService.allocateTexture(image);
-        texture.width = image.getWidth();
-        texture.height = image.getHeight();
-        texture.gridRows = GRID_ROWS;
-        texture.gridCols = GRID_COLS;
-        texture.gridCellWidth = image.getWidth() / texture.gridCols;
-        texture.gridCellHeight = image.getHeight() / texture.gridRows;
-
-        pageCache.put(i, texture);
-        return texture;
     }
 
     @Override
@@ -152,9 +117,9 @@ class BitmapUnifont extends BaseBitmapFont
     }
 
     @Override
-    protected Bitmap loadBitmap(OglService oglService, char ch)
+    protected Bitmap loadBitmap(OglService oglService, GlyphCaches glyphCaches, char ch)
     {
-        return loadPageTexture(oglService, ch / CHARACTERS_PER_PAGE);
+        return glyphCaches.ensureBitmapUnifontPageCache().loadPageTexture(id, pageSupplier, ch);
     }
 
     @Override
@@ -208,6 +173,6 @@ class BitmapUnifont extends BaseBitmapFont
     @Override
     public FontInternal deriveFont(int style, float size)
     {
-        return new BitmapUnifont(glyphSizes, pageSupplier, pageCache, name, style, size);
+        return new BitmapUnifont(id, glyphSizes, pageSupplier, name, style, size);
     }
 }

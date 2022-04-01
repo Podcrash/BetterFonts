@@ -83,7 +83,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
         return style;
     }
 
-    protected abstract Bitmap loadBitmap(OglService oglService, char ch);
+    protected abstract Bitmap loadBitmap(OglService oglService, GlyphCaches glyphCaches, char ch);
 
     protected abstract int texturePosX(Bitmap bitmap, char ch);
 
@@ -115,7 +115,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
                 continue;
             }
 
-            final Bitmap bitmap = loadBitmap(oglService, ch);
+            final Bitmap bitmap = loadBitmap(oglService, glyphCaches, ch);
 
             final int texturePosX = texturePosX(bitmap, ch);
             final int texturePosY = texturePosY(bitmap, ch);

@@ -190,7 +190,7 @@ class BitmapAsciiFont extends BaseBitmapFont
     }
 
     @Override
-    protected BaseBitmapFont.Bitmap loadBitmap(OglService oglService, char ch)
+    protected BaseBitmapFont.Bitmap loadBitmap(OglService oglService, GlyphCaches glyphCaches, char ch)
     {
         return bitmap.get(oglService);
     }

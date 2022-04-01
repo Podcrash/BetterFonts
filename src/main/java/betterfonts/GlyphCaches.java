@@ -25,10 +25,14 @@ class GlyphCaches
 {
 
     private final OpenTypeGlyphCache openTypeGlyphCache;
+    private final BitmapUnifontPageCache bitmapUnifontPageCache;
 
-    public GlyphCaches(OglService oglService, boolean createOpenTypeGlyphCache)
+    public GlyphCaches(OglService oglService,
+                       boolean createOpenTypeGlyphCache,
+                       boolean createBitmapUnifontPageCache)
     {
         this.openTypeGlyphCache = createOpenTypeGlyphCache ? new OpenTypeGlyphCache(oglService) : null;
+        this.bitmapUnifontPageCache = createBitmapUnifontPageCache ? new BitmapUnifontPageCache(oglService) : null;
     }
 
     public void setAntiAlias(boolean antiAlias)
@@ -41,10 +45,17 @@ class GlyphCaches
     {
         if(openTypeGlyphCache != null)
             openTypeGlyphCache.invalidate();
+        if(bitmapUnifontPageCache != null)
+            bitmapUnifontPageCache.invalidate();
     }
 
     public OpenTypeGlyphCache ensureOpenTypeGlyphCache()
     {
         return Objects.requireNonNull(openTypeGlyphCache, "OpenTypeGlyphCache");
+    }
+
+    public BitmapUnifontPageCache ensureBitmapUnifontPageCache()
+    {
+        return Objects.requireNonNull(bitmapUnifontPageCache, "BitmapUnifontPageCache");
     }
 }

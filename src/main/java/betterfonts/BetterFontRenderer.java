@@ -91,15 +91,9 @@ public class BetterFontRenderer implements Constants
     {
         this.oglService = oglService;
         this.colorTable = colors;
-
-        /*
-         * Create a new cache and provide it to all OpenTypeFonts
-         * This is hacky-ish, but it's the only way to remove potential problems with the same instance being
-         * used by multiple FontRenderers (then good luck understanding when we need to destroy it)
-         * or shared across fonts when they are derived.
-         */
-        final boolean createOpenTypeGlyphCache = fonts.stream().anyMatch(OpenTypeFont.class::isInstance);
-        this.glyphCaches = new GlyphCaches(oglService, createOpenTypeGlyphCache);
+        this.glyphCaches = new GlyphCaches(oglService,
+                fonts.stream().anyMatch(OpenTypeFont.class::isInstance),
+                fonts.stream().anyMatch(BitmapUnifont.class::isInstance));
         this.fontCache = new FontCache(fonts);
         this.stringCache = new StringCache(oglService, fontCache, glyphCaches);
 
