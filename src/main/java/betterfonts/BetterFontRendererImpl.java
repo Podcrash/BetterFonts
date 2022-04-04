@@ -135,6 +135,43 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
         return renderString(text, startX, startY, adjustColor(initialColor, false), false);
     }
 
+    @Override
+    public float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow, HorizontalAlignment hAlignment)
+    {
+        switch(hAlignment) {
+            case LEADING:
+                return drawString(text, startX, startY, initialColor, dropShadow);
+            case TRAILING:
+                return drawString(text, startX - getStringWidth(text), startY, initialColor, dropShadow);
+            case CENTER:
+                return drawString(text, startX - getStringWidth(text) / 2F, startY, initialColor, dropShadow);
+            default:
+                throw new AssertionError("Unimplemented HorizontalAlignment type " + hAlignment);
+        }
+    }
+
+    @Override
+    public float drawSplitString(String text,
+                                 float startX, float startY,
+                                 int wrapWidth,
+                                 int initialColor, boolean dropShadow, HorizontalAlignment hAlignment)
+    {
+        float height = 0;
+        for(String s : listFormattedStringToWidth(trimStringNewline(text), wrapWidth))
+        {
+            drawString(s, startX, startY + height, initialColor, dropShadow, hAlignment);
+            height += getFontHeight() + 1;
+        }
+        return height;
+    }
+
+    private String trimStringNewline(String text)
+    {
+        while(text != null && text.endsWith("\n"))
+            text = text.substring(0, text.length() - 1);
+        return text;
+    }
+
     /**
      * Applies the same adjustments as Minecraft does at the given color
      *

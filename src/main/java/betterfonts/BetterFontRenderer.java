@@ -27,7 +27,34 @@ public interface BetterFontRenderer extends Constants {
 
     void setAntiAlias(boolean antiAlias);
 
-    float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow);
+    default float drawString(String text, float startX, float startY, int initialColor)
+    {
+        return drawString(text, startX, startY, initialColor, false);
+    }
+
+    default float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow)
+    {
+        return drawString(text, startX, startY, initialColor, dropShadow, HorizontalAlignment.LEADING);
+    }
+
+    default float drawString(String text, float startX, float startY, int initialColor, HorizontalAlignment hAlignment)
+    {
+        return drawString(text, startX, startY, initialColor, false, hAlignment);
+    }
+
+    float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow, HorizontalAlignment hAlignment);
+
+    default float drawSplitString(String text, float startX, float startY, int wrapWidth, int initialColor)
+    {
+        return drawSplitString(text, startX, startY, wrapWidth, initialColor, false);
+    }
+
+    default float drawSplitString(String text, float startX, float startY, int wrapWidth, int initialColor, boolean dropShadow)
+    {
+        return drawSplitString(text, startX, startY, wrapWidth, initialColor, dropShadow, HorizontalAlignment.LEADING);
+    }
+
+    float drawSplitString(String text, float startX, float startY, int wrapWidth, int initialColor, boolean dropShadow, HorizontalAlignment hAlignment);
 
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
@@ -59,6 +86,10 @@ public interface BetterFontRenderer extends Constants {
      * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
      */
     float getCharWidth(char character);
+
+    default float getFontHeight() {
+        return getStringHeight(COMMON_CHARS);
+    }
 
     /**
      * Return the height of a string in pixels. Used for centering strings inside GUI buttons.
