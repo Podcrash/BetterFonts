@@ -36,6 +36,8 @@ public interface BetterFontRendererFactory extends BetterFontConditionalClauses.
         return new BetterFontRendererFactoryImpl(oglService, colors);
     }
 
+    BetterFontRendererFactory withFont(FontDescriptor font);
+
     BetterFontRendererFactory withFont(Font font);
 
     BetterFontRendererFactory withFonts(Font... fonts);

@@ -23,10 +23,7 @@ import betterfonts.FontFactory.AwtBuilder;
 import betterfonts.FontFactory.AwtBuilderEnd;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -36,7 +33,8 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     private final FontFactory fontFactory;
     private final OglService oglService;
     private final int[] colors;
-    private final List<FontInternal> fonts = new ArrayList<>();
+
+    private CompositeFont font = new CompositeFont();
 
     public BetterFontRendererFactoryImpl(OglService oglService, int[] colors)
     {
@@ -65,27 +63,30 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     }
 
     @Override
+    public BetterFontRendererFactory withFont(FontDescriptor font)
+    {
+        this.font.addFont(font);
+        return this;
+    }
+
+    @Override
     public BetterFontRendererFactory withFont(Font font)
     {
-        if(!(font instanceof FontInternal))
-            throw new AssertionError("" +
-                    "All types need to implement FontInternal " +
-                    "(instance: " + font + ", type: " + font.getClass() + ")");
-        fonts.add((FontInternal) font);
+        this.font.addFont(font);
         return this;
     }
 
     @Override
     public BetterFontRendererFactory withFonts(Font... fonts)
     {
-        Arrays.stream(fonts).forEach(this::withFont);
+        this.font.addFonts(fonts);
         return this;
     }
 
     @Override
     public BetterFontRendererFactory withFonts(Collection<Font> fonts)
     {
-        fonts.forEach(this::withFont);
+        this.font.addFonts(fonts);
         return this;
     }
 
@@ -134,8 +135,8 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     @Override
     public BetterFontRenderer build()
     {
-        final BetterFontRenderer fontRenderer = new BetterFontRenderer(oglService, colors, fonts, true);
-        fonts.clear();
+        final BetterFontRenderer fontRenderer = new BetterFontRenderer(oglService, colors, font.getFonts(), true);
+        font = new CompositeFont();
         return fontRenderer;
     }
 }

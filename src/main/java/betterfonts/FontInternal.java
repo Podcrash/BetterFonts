@@ -30,6 +30,14 @@ interface FontInternal extends Font
     /** A flag indicating that text is right-to-left as determined by Bidi analysis. */
     int LAYOUT_RIGHT_TO_LEFT = 1;
 
+    static FontInternal cast(Font font) {
+        if(!(font instanceof FontInternal))
+            throw new AssertionError("" +
+                    "All types need to implement FontInternal " +
+                    "(instance: " + font + ", type: " + font.getClass() + ")");
+        return (FontInternal) font;
+    }
+
     /**
      * Indicates whether or not this {@code Font} can display the characters in the specified {@code text}
      * starting at {@code start} and ending at {@code limit}.

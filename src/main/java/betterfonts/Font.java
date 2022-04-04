@@ -23,13 +23,14 @@ import betterfonts.FontFactory.AwtBuilder;
 import betterfonts.FontFactory.AwtBuilderEnd;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
-public interface Font
+public interface Font extends FontDescriptor
 {
     /** The plain style constant */
     int PLAIN = java.awt.Font.PLAIN;
@@ -83,6 +84,12 @@ public interface Font
     static Font createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size)
     {
         return FontFactoryImpl.INSTANCE.createBitmapUnifont(name, glyphSizes, pageSupplier, size);
+    }
+
+    @Override
+    default List<? extends Font> getFonts()
+    {
+        return Collections.singletonList(this);
     }
 
     /** @return the font face name of this Font */
