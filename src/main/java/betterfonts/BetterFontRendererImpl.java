@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL14;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 
-class BetterFontRenderer implements Constants, IBetterFontRenderer {
+class BetterFontRendererImpl implements Constants, IBetterFontRenderer {
     /** Offset from the string's baseline as which to draw the underline (in pixels) */
     private static final float UNDERLINE_OFFSET = 1 * MINECRAFT_SCALE_FACTOR;
 
@@ -85,7 +85,7 @@ class BetterFontRenderer implements Constants, IBetterFontRenderer {
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    BetterFontRenderer(OglService oglService, int[] colors, List<FontInternal> fonts, boolean antiAlias)
+    BetterFontRendererImpl(OglService oglService, int[] colors, List<FontInternal> fonts, boolean antiAlias)
     {
         this.oglService = oglService;
         this.colorTable = colors;
