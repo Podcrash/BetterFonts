@@ -29,9 +29,7 @@ import org.lwjgl.opengl.GL14;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 
-@SuppressWarnings("unused")
-public class BetterFontRenderer implements Constants
-{
+class BetterFontRenderer implements Constants, IBetterFontRenderer {
     /** Offset from the string's baseline as which to draw the underline (in pixels) */
     private static final float UNDERLINE_OFFSET = 1 * MINECRAFT_SCALE_FACTOR;
 
@@ -101,6 +99,7 @@ public class BetterFontRenderer implements Constants
         setAntiAlias(antiAlias);
     }
 
+    @Override
     public void setAntiAlias(boolean antiAlias)
     {
         this.antiAliasEnabled = antiAlias;
@@ -120,6 +119,7 @@ public class BetterFontRenderer implements Constants
         return fontCache.getFonts();
     }
 
+    @Override
     public float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow)
     {
         oglService.glEnable(GL11.GL_ALPHA);
@@ -152,20 +152,7 @@ public class BetterFontRenderer implements Constants
         return initialColor;
     }
 
-    /**
-     * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
-     * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
-     * add the string to the cache so the next renderString() call with the same string is faster.
-     *
-     * @param str the string being rendered; it can contain color codes
-     * @param startX the x coordinate to draw at
-     * @param startY the y coordinate to draw at
-     * @param initialColor the initial RGBA color to use when drawing the string; embedded color codes can override the RGB component
-     * @param shadowFlag if true, color codes are replaces by a darker version used for drop shadows
-     * @return the total advance (horizontal distance) of this string
-     *
-     * @todo Add optional NumericShaper to replace ASCII digits with locale specific ones
-     */
+    @Override
     public float renderString(String str, float startX, float startY, int initialColor, boolean shadowFlag)
     {
         /* Check for invalid arguments */
@@ -418,12 +405,7 @@ public class BetterFontRenderer implements Constants
         return isAlreadyDrawingLine;
     }
 
-    /**
-     * Return the width of a string in pixels. Used for centering strings inside GUI buttons.
-     *
-     * @param str compute the width of this string
-     * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
-     */
+    @Override
     public float getStringWidth(String str)
     {
         /* Check for invalid arguments */
@@ -439,23 +421,13 @@ public class BetterFontRenderer implements Constants
         return entry.advance;
     }
 
-    /**
-     * Return the width of a character in pixels. Used for centering strings inside GUI buttons.
-     *
-     * @param character compute the width of this character
-     * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
-     */
+    @Override
     public float getCharWidth(char character)
     {
         return getStringWidth(String.valueOf(character));
     }
 
-    /**
-     * Return the height of a string in pixels. Used for centering strings inside GUI buttons.
-     *
-     * @param str compute the height of this string
-     * @return the height in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
-     */
+    @Override
     public float getStringHeight(String str)
     {
         /* Check for invalid arguments */
@@ -471,12 +443,7 @@ public class BetterFontRenderer implements Constants
         return entry.height;
     }
 
-    /**
-     * Return the height of a string baseline in pixels. Used for centering strings inside GUI buttons.
-     *
-     * @param str compute the height of this string
-     * @return the height in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
-     */
+    @Override
     public float getStringBaseline(String str)
     {
         /* Check for invalid arguments */
@@ -492,29 +459,13 @@ public class BetterFontRenderer implements Constants
         return entry.ascent;
     }
 
-    /**
-     * Return the bounds in pixels where this string gets rendered in, relative to its height and width.
-     * Used for centering strings inside GUI buttons.
-     *
-     * @param str compute the visual bounds of this string
-     * @return the visual bounds in pixels
-     */
+    @Override
     public Rectangle2D.Float getStringVisualBounds(String str)
     {
         return getStringVisualBounds(str, new Rectangle2D.Float());
     }
 
-    /**
-     * Return the bounds in pixels where this string gets rendered in, relative to its height and width.
-     * Used for centering strings inside GUI buttons.
-     *
-     * This overload uses and returns the rect provided by the user, without creating another one.
-     * Should be used for caching purposes.
-     *
-     * @param str compute the visual bounds of this string
-     * @param rectangle rect where the visual bounds will be set
-     * @return the visual bounds in pixels
-     */
+    @Override
     public Rectangle2D.Float getStringVisualBounds(String str, Rectangle2D.Float rectangle)
     {
         /* Check for invalid arguments */
@@ -554,16 +505,7 @@ public class BetterFontRenderer implements Constants
         return rectangle;
     }
 
-    /**
-     * Return the number of characters in a string that will completely fit inside the specified width when rendered, with
-     * or without preferring to break the line at whitespace instead of breaking in the middle of a word. This private provides
-     * the real implementation of both sizeStringToWidth() and trimStringToWidth().
-     *
-     * @param str the String to analyze
-     * @param width the desired string width (in GUI coordinate system)
-     * @param breakAtSpaces set to prefer breaking line at spaces than in the middle of a word
-     * @return the number of characters from str that will fit inside width
-     */
+    @Override
     public int sizeString(String str, float width, boolean breakAtSpaces)
     {
         /* Check for invalid arguments */
@@ -616,38 +558,19 @@ public class BetterFontRenderer implements Constants
         return index < glyphs.length ? glyphs[index].stringIndex : str.length();
     }
 
-    /**
-     * Return the number of characters in a string that will completely fit inside the specified width when rendered.
-     *
-     * @param str the String to analyze
-     * @param width the desired string width (in GUI coordinate system)
-     * @return the number of characters from str that will fit inside width
-     */
+    @Override
     public int sizeStringToWidth(String str, float width)
     {
         return sizeString(str, width, true);
     }
 
-    /**
-     * Trim a string so that it fits in the specified width when rendered.
-     *
-     * @param str the String to trim
-     * @param width the desired string width (in GUI coordinate system)
-     * @return the trimmed and optionally reversed string
-     */
+    @Override
     public String trimStringToWidth(String str, float width)
     {
         return trimStringToWidth(str, width, false);
     }
 
-    /**
-     * Trim a string so that it fits in the specified width when rendered, optionally reversing the string
-     *
-     * @param str the String to trim
-     * @param width the desired string width (in GUI coordinate system)
-     * @param reverse if true, the returned string will also be reversed
-     * @return the trimmed and optionally reversed string
-     */
+    @Override
     public String trimStringToWidth(String str, float width, boolean reverse)
     {
         if (reverse)
@@ -664,6 +587,7 @@ public class BetterFontRenderer implements Constants
         return str;
     }
 
+    @Override
     public List<String> listFormattedStringToWidth(String str, float wrapWidth)
     {
         final List<String> lines = new ArrayList<>();
