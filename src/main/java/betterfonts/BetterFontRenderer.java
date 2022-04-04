@@ -23,7 +23,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public interface IBetterFontRenderer extends Constants {
+public interface BetterFontRenderer extends Constants {
 
     void setAntiAlias(boolean antiAlias);
 

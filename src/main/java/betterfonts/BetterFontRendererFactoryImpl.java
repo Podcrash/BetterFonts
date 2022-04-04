@@ -135,7 +135,7 @@ class BetterFontRendererFactoryImpl implements BetterFontRendererFactory
     @Override
     public BetterFontRenderer build()
     {
-        final BetterFontRenderer fontRenderer = new BetterFontRenderer(oglService, colors, font.getFonts(), true);
+        final BetterFontRenderer fontRenderer = new BetterFontRendererImpl(oglService, colors, font.getFonts(), true);
         font = new CompositeFont();
         return fontRenderer;
     }

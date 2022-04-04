@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL14;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 
-class BetterFontRendererImpl implements Constants, IBetterFontRenderer {
+class BetterFontRendererImpl implements Constants, BetterFontRenderer {
     /** Offset from the string's baseline as which to draw the underline (in pixels) */
     private static final float UNDERLINE_OFFSET = 1 * MINECRAFT_SCALE_FACTOR;
 
