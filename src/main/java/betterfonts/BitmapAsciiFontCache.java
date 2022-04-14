@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -32,8 +31,7 @@ import java.util.function.Supplier;
 class BitmapAsciiFontCache
 {
 
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
+    private final FontRenderContext fontRenderContext;
 
     /**
      * A cache of all font textures.
@@ -41,18 +39,23 @@ class BitmapAsciiFontCache
      */
     private final Map<Integer, BaseBitmapFont.Bitmap> bitmapCache = new HashMap<>();
 
-    public BitmapAsciiFontCache(OglService oglService) {
-        this.oglService = oglService;
+    public BitmapAsciiFontCache(FontRenderContext fontRenderContext)
+    {
+        this.fontRenderContext = fontRenderContext;
     }
 
     public void invalidate()
     {
-        final int[] textures = bitmapCache.values().stream()
-                .mapToInt(g -> g.textureName)
-                .distinct()
-                .toArray();
+        if(fontRenderContext.isGraphicsContext())
+        {
+            final OglService oglService = fontRenderContext.ensureGraphicsContextCurrent();
+            bitmapCache.values().stream()
+                    .mapToInt(g -> g.textureName)
+                    .distinct()
+                    .forEach(oglService::glDeleteTextures);
+        }
+
         bitmapCache.clear();
-        Arrays.stream(textures).forEach(oglService::glDeleteTextures);
     }
 
     public BaseBitmapFont.Bitmap loadBitmap(int fontId, Supplier<InputStream> bitmapSupplier)
@@ -61,14 +64,18 @@ class BitmapAsciiFontCache
         if(texture != null)
             return texture;
 
-        bitmapCache.put(fontId, texture = readBitmap(loadBitmapImage(bitmapSupplier)));
+        texture = readBitmap(loadBitmapImage(bitmapSupplier));
+        if(fontRenderContext.shouldCache())
+            bitmapCache.put(fontId, texture);
         return texture;
     }
 
     private BaseBitmapFont.Bitmap readBitmap(BufferedImage image)
     {
         final BaseBitmapFont.Bitmap bitmap = new BaseBitmapFont.Bitmap();
-        bitmap.textureName = oglService.allocateTexture(image);
+        bitmap.textureName = fontRenderContext
+                .getIfGraphicsContextCurrent(oglService -> oglService.allocateTexture(image))
+                .orElse(-1);
         bitmap.width = image.getWidth();
         bitmap.height = image.getHeight();
         bitmap.gridRows = BitmapAsciiFont.GRID_ROWS;

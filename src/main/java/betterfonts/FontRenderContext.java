@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,23 +19,25 @@
 
 package betterfonts;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-public interface FontDescriptor
+public interface FontRenderContext
 {
 
-    static FontDescriptor create(Font... fonts)
+    boolean isGraphicsContext();
+
+    boolean isContextCurrent();
+
+    default boolean shouldCache()
     {
-        return new CompositeFont(fonts);
+        return !isGraphicsContext() || isContextCurrent();
     }
 
-    static FontDescriptor create(Collection<Font> fonts)
-    {
-        return new CompositeFont(fonts);
-    }
+    OglService ensureGraphicsContextCurrent();
 
-    FontMetrics getMetrics();
+    boolean runIfGraphicsContextCurrent(Consumer<OglService> consumer);
 
-    List<? extends Font> getFonts();
+    <T> Optional<T> getIfGraphicsContextCurrent(Function<OglService, T> function);
 }

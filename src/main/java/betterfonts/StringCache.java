@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,8 +56,7 @@ import java.util.stream.Collectors;
  */
 class StringCache
 {
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
+    private final FontRenderContext fontRenderContext;
 
     /** Service used to make OpenGL calls */
     private final FontCache fontCache;
@@ -276,9 +275,9 @@ class StringCache
         }
     }
 
-    public StringCache(OglService oglService, FontCache fontCache, GlyphCaches glyphCaches)
+    public StringCache(FontRenderContext fontRenderContext, FontCache fontCache, GlyphCaches glyphCaches)
     {
-        this.oglService = oglService;
+        this.fontRenderContext = fontRenderContext;
         this.fontCache = fontCache;
         this.glyphCaches = glyphCaches;
 
@@ -338,7 +337,7 @@ class StringCache
         Entry entry = null;
 
         /* Don't perform a cache lookup from other threads because the stringCache is not synchronized */
-        if(oglService.isContextCurrent())
+        if(fontRenderContext.shouldCache())
         {
             /* Re-use existing lookupKey to avoid allocation overhead on the critical rendering path */
             lookupKey.str = str;
@@ -375,7 +374,8 @@ class StringCache
              * Do not actually sort by texture when called from other threads because GlyphCache.cacheGlyphs()
              * will not have been called and the cache entry does not contain any texture data needed for rendering.
              */
-            if (oglService.isContextCurrent()) {
+            if (fontRenderContext.isGraphicsContext() && fontRenderContext.isContextCurrent())
+            {
                 entry.sortedGlyphs = Arrays.copyOf(entry.glyphs, entry.glyphs.length);
                 Arrays.sort(entry.sortedGlyphs, Comparator.comparingInt(o -> o.texture.textureName));
             }
@@ -426,7 +426,7 @@ class StringCache
              * Do not actually cache the string when called from other threads because GlyphCache.cacheGlyphs() will not have been called
              * and the cache entry does not contain any texture data needed for rendering.
              */
-            if(oglService.isContextCurrent())
+            if(fontRenderContext.shouldCache())
             {
                 /* Wrap the string in a Key object (to change how ASCII digits are compared) and cache it along with the newly generated Entry */
                 key = new Key();
@@ -440,7 +440,7 @@ class StringCache
         }
 
         /* Do not access weakRefCache from other threads since it is un-synchronized, and for a newly created entry, the keyRef is null */
-        if(oglService.isContextCurrent())
+        if(fontRenderContext.shouldCache())
         {
             /*
              * Add the String passed into this method to the stringWeakMap so it keeps the Key reference live as long as the String is in use.
@@ -723,7 +723,7 @@ class StringCache
             final AtomicInteger limitPtr = new AtomicInteger(limit);
             FontInternal font = fontCache.lookupFont(text, start, limitPtr, style);
             /* limitPtr is updated with the limit at which this Font should stop rendering */
-            advance = font.layoutFont(oglService, glyphCaches, glyphList, text, start, limitPtr.get(), layoutFlags, advance);
+            advance = font.layoutFont(fontRenderContext, glyphCaches, glyphList, text, start, limitPtr.get(), layoutFlags, advance);
             start = limitPtr.get();
         }
 

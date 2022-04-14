@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,12 +19,11 @@
 
 package betterfonts;
 
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL14;
-
 import java.awt.image.BufferedImage;
 import java.nio.IntBuffer;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Service used to make OpenGL calls, in order to allow having different implementations depending on the Minecraft
@@ -33,9 +32,43 @@ import java.nio.IntBuffer;
  * For example in Minecraft 1.8, it could be implemented using GlStatManager and Tessellator instead of raw gl calls.
  * @author Ferlo
  */
-public interface OglService {
+public interface OglService extends FontRenderContext
+{
+    @Override
+    default boolean isGraphicsContext()
+    {
+        return true;
+    }
 
-    boolean isContextCurrent();
+    @Override
+    default OglService ensureGraphicsContextCurrent()
+    {
+        if(!isGraphicsContext())
+            throw new UnsupportedOperationException("This is not a graphics context");
+        if(!isContextCurrent())
+            throw new UnsupportedOperationException("OGL context is not current");
+        return this;
+    }
+
+    @Override
+    default boolean runIfGraphicsContextCurrent(Consumer<OglService> consumer)
+    {
+        if(isContextCurrent())
+        {
+            consumer.accept(this);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    default <T> Optional<T> getIfGraphicsContextCurrent(Function<OglService, T> function)
+    {
+        return isContextCurrent() ?
+                Optional.ofNullable(function.apply(this)) :
+                Optional.empty();
+    }
 
     Tessellator tessellator();
 

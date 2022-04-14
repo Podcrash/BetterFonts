@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  * Copyright (C) 2018 Jittapan Pluemsumran <https://github.com/secretdataz>
  * Copyright (C) 2017 cubex2 <https://github.com/cubex2>
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
@@ -27,9 +27,12 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 
 import java.awt.geom.Rectangle2D;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
-class BetterFontRendererImpl implements Constants, BetterFontRenderer {
+class BetterFontRendererImpl extends FontMetricsImpl implements Constants, BetterFontRenderer
+{
     /** Offset from the string's baseline as which to draw the underline (in pixels) */
     private static final float UNDERLINE_OFFSET = 1 * MINECRAFT_SCALE_FACTOR;
 
@@ -51,17 +54,7 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
         RANDOM_STYLE_CHARS = unsorted;
     }
 
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
-
-    /** Cache used to lookup which fonts to use for rendering */
-    private final FontCache fontCache;
-
-    /** Cache used to save layed out glyphs to be subsequently reused */
-    private final StringCache stringCache;
-
-    /** Caches needed for creating GlyphVectors and retrieving glyph texture coordinates. */
-    private final GlyphCaches glyphCaches;
+    private final FontRenderContext fontRenderContext;
 
     /**
      * Color codes from original FontRender class. First 16 entries are the primary chat colors; second 16 are darker versions
@@ -85,16 +78,12 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    BetterFontRendererImpl(OglService oglService, int[] colors, List<FontInternal> fonts, boolean antiAlias)
+    BetterFontRendererImpl(FontRenderContext fontRenderContext, int[] colors, List<? extends Font> fonts, boolean antiAlias)
     {
-        this.oglService = oglService;
+        super(fontRenderContext, fonts);
+
+        this.fontRenderContext = fontRenderContext;
         this.colorTable = colors;
-        this.glyphCaches = new GlyphCaches(oglService,
-                fonts.stream().anyMatch(OpenTypeFont.class::isInstance),
-                fonts.stream().anyMatch(BitmapAsciiFont.class::isInstance),
-                fonts.stream().anyMatch(BitmapUnifont.class::isInstance));
-        this.fontCache = new FontCache(fonts);
-        this.stringCache = new StringCache(oglService, fontCache, glyphCaches);
 
         setAntiAlias(antiAlias);
     }
@@ -108,13 +97,6 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
         invalidate();
     }
 
-    public void invalidate()
-    {
-        glyphCaches.invalidate();
-        /* Make sure to invalidate it after the GlyphCache */
-        stringCache.invalidate();
-    }
-
     public List<Font> getFonts() {
         return fontCache.getFonts();
     }
@@ -122,7 +104,7 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
     @Override
     public float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow)
     {
-        oglService.glEnable(GL11.GL_ALPHA);
+        fontRenderContext.ensureGraphicsContextCurrent().glEnable(GL11.GL_ALPHA);
 
         if(dropShadow)
         {
@@ -198,11 +180,13 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
             return 0;
         }
 
+        final OglService oglService = fontRenderContext.ensureGraphicsContextCurrent();
+
         /* Fix for vanilla mipmapping
          * Easiest fix to not implement mip-mapping
          * For some reasons if I put it somewhere else it disables mipmapping */
-        saveMipmapping();
-        disableMipmapping();
+        saveMipmapping(oglService);
+        disableMipmapping(oglService);
 
         /* Fix for what RenderLivingBase#setBrightness does */
         oglService.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
@@ -316,12 +300,12 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
                 tessellator.startDrawingQuadsWithUV();
                 tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
-                restoreMipmapping(); // If I don't do this mipmapping gets completely disabled
+                restoreMipmapping(oglService); // If I don't do this mipmapping gets completely disabled
 
                 oglService.glBindTexture(GL11.GL_TEXTURE_2D, texture.textureName);
                 boundTextureName = texture.textureName;
 
-                disableMipmapping(); // Re-disable it
+                disableMipmapping(oglService); // Re-disable it
             }
 
             float x1 = glyphX;
@@ -392,7 +376,7 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
 
         oglService.glTranslatef(-startX, -startY, 0);
 
-        restoreMipmapping();
+        restoreMipmapping(oglService);
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
         return entry.advance;
@@ -443,60 +427,6 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
     }
 
     @Override
-    public float getStringWidth(String str)
-    {
-        /* Check for invalid arguments */
-        if(str == null || str.isEmpty())
-        {
-            return 0;
-        }
-
-        /* Make sure the entire string is cached and rendered since it will probably be used again in a renderString() call */
-        StringCache.Entry entry = stringCache.cacheString(str);
-
-        /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.advance;
-    }
-
-    @Override
-    public float getCharWidth(char character)
-    {
-        return getStringWidth(String.valueOf(character));
-    }
-
-    @Override
-    public float getStringHeight(String str)
-    {
-        /* Check for invalid arguments */
-        if(str == null || str.isEmpty())
-        {
-            return 0;
-        }
-
-        /* Make sure the entire string is cached and rendered since it will probably be used again in a renderString() call */
-        StringCache.Entry entry = stringCache.cacheString(str);
-
-        /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.height;
-    }
-
-    @Override
-    public float getStringBaseline(String str)
-    {
-        /* Check for invalid arguments */
-        if(str == null || str.isEmpty())
-        {
-            return 0;
-        }
-
-        /* Make sure the entire string is cached and rendered since it will probably be used again in a renderString() call */
-        StringCache.Entry entry = stringCache.cacheString(str);
-
-        /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.ascent;
-    }
-
-    @Override
     public Rectangle2D.Float getStringVisualBounds(String str)
     {
         return getStringVisualBounds(str, new Rectangle2D.Float());
@@ -542,135 +472,6 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
         return rectangle;
     }
 
-    @Override
-    public int sizeString(String str, float width, boolean breakAtSpaces)
-    {
-        /* Check for invalid arguments */
-        if(str == null || str.isEmpty())
-        {
-            return 0;
-        }
-
-        /* The glyph array for a string is sorted by the string's logical character position */
-        Glyph[] glyphs = stringCache.cacheString(str).glyphs;
-
-        /* Index of the last whitespace found in the string; used if breakAtSpaces is true */
-        int wsIndex = -1;
-
-        /* Add up the individual advance of each glyph until it exceeds the specified width */
-        float advance = 0;
-        int index = 0;
-        while(index < glyphs.length && advance <= width)
-        {
-            /* Keep track of spaces if breakAtSpaces it set */
-            if(breakAtSpaces)
-            {
-                char c = str.charAt(glyphs[index].stringIndex);
-                if(c == ' ')
-                {
-                    wsIndex = index;
-                }
-                else if(c == '\n')
-                {
-                    wsIndex = index;
-                    break;
-                }
-            }
-
-            float nextAdvance = advance + glyphs[index].advance;
-            if(nextAdvance > width) // Prevents returning an additional char
-                break;
-
-            advance = nextAdvance;
-            index++;
-        }
-
-        /* Avoid splitting individual words if breakAtSpaces set; same test condition as in Minecraft's FontRenderer */
-        if(index < glyphs.length && wsIndex != -1 && wsIndex < index)
-        {
-            index = wsIndex;
-        }
-
-        /* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters */
-        return index < glyphs.length ? glyphs[index].stringIndex : str.length();
-    }
-
-    @Override
-    public int sizeStringToWidth(String str, float width)
-    {
-        return sizeString(str, width, true);
-    }
-
-    @Override
-    public String trimStringToWidth(String str, float width)
-    {
-        return trimStringToWidth(str, width, false);
-    }
-
-    @Override
-    public String trimStringToWidth(String str, float width, boolean reverse)
-    {
-        if (reverse)
-            str = new StringBuilder(str).reverse().toString();
-
-        int length = sizeString(str, width, false);
-        str = str.substring(0, length);
-
-        if(reverse)
-        {
-            str = (new StringBuilder(str)).reverse().toString();
-        }
-
-        return str;
-    }
-
-    @Override
-    public List<String> listFormattedStringToWidth(String str, float wrapWidth)
-    {
-        final List<String> lines = new ArrayList<>();
-
-        String remaining = str;
-        do
-        {
-            final int lineEnd = sizeStringToWidth(remaining, wrapWidth);
-
-            final String line = remaining.substring(0, lineEnd);
-            lines.add(line);
-
-            final boolean isWhitespace = lineEnd < remaining.length() &&
-                    (remaining.charAt(lineEnd) == ' ' || remaining.charAt(lineEnd) == '\n');
-            remaining = getFormatFromString(remaining) + remaining.substring(lineEnd + (isWhitespace ? 1 : 0));
-        }
-        while(!remaining.isEmpty());
-
-        return lines;
-    }
-
-    private String getFormatFromString(String str)
-    {
-        final StringBuilder sb = new StringBuilder();
-        int start = 0, next;
-
-        /* Search for section mark characters indicating the start of a color code (but only if followed by at least one character) */
-        while((next = str.indexOf('\u00A7', start)) != -1 && next + 1 < str.length())
-        {
-            char ch = str.charAt(next + 1);
-            int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(ch));
-
-            if(code != -1) // isColor || isFormatSpecial
-            {
-                if(code <= 15) // isColor
-                    sb.setLength(0); // This may be a bug in Minecraft's original FontRenderer
-                sb.append('\u00A7').append(ch);
-            }
-
-            /* Resume search for section marks after skipping this one */
-            start = next + 2;
-        }
-
-        return sb.toString();
-    }
-
     /**
      * Apply a new vertex color to the Tessellator instance based on the numeric chat color code. Only the RGB component of the
      * color is replaced by a color code; the alpha component of the original default color will remain.
@@ -694,7 +495,7 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
     }
 
     /** Save current mipmapping values */
-    private void saveMipmapping()
+    private void saveMipmapping(OglService oglService)
     {
         cachedTexMinFilter = oglService.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
         cachedTexMagFilter = oglService.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
@@ -703,7 +504,7 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
     }
 
     /** Disables mipmapping to render strings cause it's not properly implemented */
-    private void disableMipmapping()
+    private void disableMipmapping(OglService oglService)
     {
         oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
         oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
@@ -712,7 +513,7 @@ class BetterFontRendererImpl implements Constants, BetterFontRenderer {
     }
 
     /** Reset mipmapping to the saved values */
-    private void restoreMipmapping()
+    private void restoreMipmapping(OglService oglService)
     {
         oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, cachedTexMinFilter);
         oglService.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, cachedTexMagFilter);

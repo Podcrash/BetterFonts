@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.IntFunction;
@@ -35,8 +34,7 @@ class BitmapUnifontPageCache
     private static final int GRID_COLS = 16;
     private static final int CHARACTERS_PER_PAGE = GRID_ROWS * GRID_COLS;
 
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
+    private final FontRenderContext fontRenderContext;
 
     /**
      * A cache of all unicode pages that have at least one glyph rendered in a texture.
@@ -46,24 +44,26 @@ class BitmapUnifontPageCache
      */
     private final Map<Long, BaseBitmapFont.Bitmap> pageCache = new HashMap<>();
 
-    public BitmapUnifontPageCache(OglService oglService)
+    public BitmapUnifontPageCache(FontRenderContext fontRenderContext)
     {
-        this.oglService = oglService;
+        this.fontRenderContext = fontRenderContext;
     }
 
     public void invalidate()
     {
-        final int[] textures = pageCache.values().stream()
-                .mapToInt(g -> g.textureName)
-                .distinct()
-                .toArray();
+        if(fontRenderContext.isGraphicsContext())
+        {
+            final OglService oglService = fontRenderContext.ensureGraphicsContextCurrent();
+            pageCache.values().stream()
+                    .mapToInt(g -> g.textureName)
+                    .distinct()
+                    .forEach(oglService::glDeleteTextures);
+        }
+
         pageCache.clear();
-        Arrays.stream(textures).forEach(oglService::glDeleteTextures);
     }
 
-    public BaseBitmapFont.Bitmap loadPageTexture(int fontId,
-                                                 IntFunction<InputStream> pageSupplier,
-                                                 char ch)
+    public BaseBitmapFont.Bitmap loadPageTexture(int fontId, IntFunction<InputStream> pageSupplier, char ch)
     {
         final int page = ch / CHARACTERS_PER_PAGE;
         final long key = fontId | page;
@@ -83,7 +83,9 @@ class BitmapUnifontPageCache
         }
 
         texture = new BaseBitmapFont.Bitmap();
-        texture.textureName = oglService.allocateTexture(image);
+        texture.textureName = fontRenderContext
+                .getIfGraphicsContextCurrent(oglService -> oglService.allocateTexture(image))
+                .orElse(-1);
         texture.width = image.getWidth();
         texture.height = image.getHeight();
         texture.gridRows = GRID_ROWS;
@@ -91,7 +93,8 @@ class BitmapUnifontPageCache
         texture.gridCellWidth = image.getWidth() / texture.gridCols;
         texture.gridCellHeight = image.getHeight() / texture.gridRows;
 
-        pageCache.put(key, texture);
+        if(fontRenderContext.shouldCache())
+            pageCache.put(key, texture);
         return texture;
     }
 }

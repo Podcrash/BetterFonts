@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-class OpenTypeFont implements FontInternal, Constants
+class OpenTypeFont extends BaseFontDescriptor implements FontInternal, Constants
 {
     /** Actual underlying java Font */
     private final java.awt.Font font;
@@ -115,7 +115,7 @@ class OpenTypeFont implements FontInternal, Constants
     }
 
     @Override
-    public float layoutFont(OglService oglService,
+    public float layoutFont(FontRenderContext fontRenderContext,
                             GlyphCaches glyphCaches,
                             List<Glyph> glyphList,
                             char[] text, int start, int limit, int layoutFlags, float advance)
@@ -128,10 +128,8 @@ class OpenTypeFont implements FontInternal, Constants
          * cacheString() will also not insert the entry into the stringCache since it may be incomplete if lookupGlyph()
          * returns null for any glyphs not yet stored in the glyph cache.
          */
-        if(oglService.isContextCurrent())
-        {
-            glyphCache.cacheGlyphs(font, text, start, limit, layoutFlags);
-        }
+        fontRenderContext.runIfGraphicsContextCurrent(oglService ->
+                glyphCache.cacheGlyphs(font, text, start, limit, layoutFlags));
 
         /* Creating a GlyphVector takes care of all language specific OpenType glyph substitutions and positioning */
         GlyphVector vector = glyphCache.layoutGlyphVector(font, text, start, limit, layoutFlags);

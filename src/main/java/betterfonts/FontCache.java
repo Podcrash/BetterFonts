@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,10 +20,10 @@
 
 package betterfonts;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 class FontCache
 {
@@ -35,11 +35,14 @@ class FontCache
     private final List<FontInternal> fonts;
     private final List<Font> unmodifiableFonts;
 
-    public FontCache(List<FontInternal> fonts)
+    public FontCache(List<? extends Font> fonts)
     {
         if(fonts.isEmpty())
             throw new UnsupportedOperationException("The FontRenderer needs at least 1 font");
-        this.fonts = new ArrayList<>(fonts);
+        this.fonts = fonts.stream()
+                .sequential()
+                .map(FontInternal::cast)
+                .collect(Collectors.toList());
         this.unmodifiableFonts = Collections.unmodifiableList(this.fonts);
     }
 

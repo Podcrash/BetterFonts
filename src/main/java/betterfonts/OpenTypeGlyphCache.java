@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -89,8 +89,7 @@ class OpenTypeGlyphCache
     /** If true, then enable anti-aliasing when rendering the font glyph */
     private boolean antiAliasEnabled = false;
 
-    /** Service used to make OpenGL calls */
-    private final OglService oglService;
+    private final betterfonts.FontRenderContext betterfontsRenderContext;
 
     /** Temporary image for rendering a string to and then extracting the glyph images from. */
     private BufferedImage stringImage;
@@ -121,7 +120,7 @@ class OpenTypeGlyphCache
 
 
     /** ID of current OpenGL cache texture being used by cacheGlyphs() to store pre-rendered glyph images. */
-    private int textureName;
+    private int textureName = -1;
 
     /**
      * A cache of all fonts that have at least one glyph pre-rendered in a texture. Each font maps to an integer (monotonically
@@ -160,16 +159,16 @@ class OpenTypeGlyphCache
     private int cacheLineHeight = 0;
 
     /** A single instance of GlyphCache is allocated for internal use by the StringCache class. */
-    public OpenTypeGlyphCache(OglService oglService)
+    public OpenTypeGlyphCache(betterfonts.FontRenderContext fontRenderContext)
     {
-        this.oglService = oglService;
+        this.betterfontsRenderContext = fontRenderContext;
+
         /* Set background color for use with clearRect() */
         glyphCacheGraphics.setBackground(BACK_COLOR);
 
         /* The drawImage() to this buffer will copy all source pixels instead of alpha blending them into the current image */
         glyphCacheGraphics.setComposite(AlphaComposite.Src);
 
-        allocateGlyphCacheTexture();
         allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
     }
 
@@ -183,9 +182,13 @@ class OpenTypeGlyphCache
         fontCache.clear();
         glyphCache.clear();
 
-        Arrays.stream(textures).forEach(oglService::glDeleteTextures);
+        if(betterfontsRenderContext.isGraphicsContext())
+        {
+            final OglService oglService = betterfontsRenderContext.ensureGraphicsContextCurrent();
+            Arrays.stream(textures).forEach(oglService::glDeleteTextures);
+            allocateGlyphCacheTexture(oglService);
+        }
 
-        allocateGlyphCacheTexture();
         allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
     }
 
@@ -265,6 +268,8 @@ class OpenTypeGlyphCache
      */
     public void cacheGlyphs(Font font, char[] text, int start, int limit, int layoutFlags)
     {
+        final OglService oglService = betterfontsRenderContext.ensureGraphicsContextCurrent();
+
         /* Create new GlyphVector so glyphs can be moved around (kerning workaround; see below) without affecting caller */
         GlyphVector vector = layoutGlyphVector(font, text, start, limit, layoutFlags);
 
@@ -364,13 +369,13 @@ class OpenTypeGlyphCache
              * (i.e. the dirty rectangle), allocate a new cache texture, and then continue storing glyph images to the
              * upper-left corner of the new texture.
              */
-            if(cachePosY + rect.height + GLYPH_BORDER > TEXTURE_HEIGHT)
+            if(textureName == -1 || cachePosY + rect.height + GLYPH_BORDER > TEXTURE_HEIGHT)
             {
-                updateTexture(dirty);
+                updateTexture(oglService, dirty);
                 dirty = null;
 
                 /* Note that allocateAndSetupTexture() will leave the GL texture already bound */
-                allocateGlyphCacheTexture();
+                allocateGlyphCacheTexture(oglService);
                 cachePosY = cachePosX = GLYPH_BORDER;
                 cacheLineHeight = 0;
             }
@@ -435,7 +440,7 @@ class OpenTypeGlyphCache
         }
 
         /* Update OpenGL texture if any part of the glyphCacheImage has changed */
-        updateTexture(dirty);
+        updateTexture(oglService, dirty);
     }
 
     /**
@@ -447,7 +452,7 @@ class OpenTypeGlyphCache
      * @todo Test with bilinear texture interpolation and possibly add a 1 pixel transparent border around each glyph to avoid
      *       bleed-over when interpolation is active or add a small "fudge factor" to the UV coordinates like already n FontRenderer
      */
-    private void updateTexture(Rectangle dirty)
+    private void updateTexture(OglService oglService, Rectangle dirty)
     {
         /* Only update OpenGL texture if changes were made to the texture */
         if(dirty != null)
@@ -503,7 +508,7 @@ class OpenTypeGlyphCache
      *
      * @todo use GL_ALPHA4 if anti-alias is turned off for even smaller textures
      */
-    private void allocateGlyphCacheTexture()
+    private void allocateGlyphCacheTexture(OglService oglService)
     {
         /* Initialize the background to all white but fully transparent. */
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);

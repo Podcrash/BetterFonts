@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,7 +21,7 @@ package betterfonts;
 
 import java.util.*;
 
-class CompositeFont implements FontDescriptor
+class CompositeFont extends BaseFontDescriptor implements FontDescriptor
 {
 
     private final List<FontInternal> fonts;
@@ -47,7 +47,7 @@ class CompositeFont implements FontDescriptor
         this.unmodifiableFonts = Collections.unmodifiableList(this.fonts);
     }
 
-    public CompositeFont(Collection<Font> fonts)
+    public CompositeFont(Collection<? extends Font> fonts)
     {
         this.fonts = new ArrayList<>();
         addFonts(fonts);

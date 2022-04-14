@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,9 +20,8 @@
 package betterfonts;
 
 import java.util.List;
-import java.util.function.Function;
 
-public abstract class BaseBitmapFont implements FontInternal, Constants
+abstract class BaseBitmapFont extends BaseFontDescriptor implements FontInternal, Constants
 {
     /** Style of this font */
     protected final int style;
@@ -65,7 +64,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
         return style;
     }
 
-    protected abstract Bitmap loadBitmap(OglService oglService, GlyphCaches glyphCaches, char ch);
+    protected abstract Bitmap loadBitmap(FontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch);
 
     protected abstract int texturePosX(Bitmap bitmap, char ch);
 
@@ -82,7 +81,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
     protected abstract int glyphGap();
 
     @Override
-    public float layoutFont(OglService oglService,
+    public float layoutFont(FontRenderContext fontRenderContext,
                             GlyphCaches glyphCaches,
                             List<Glyph> glyphList,
                             char[] text, int start, int limit, int layoutFlags, float advance)
@@ -97,10 +96,7 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
                 continue;
             }
 
-            final Bitmap bitmap = loadBitmap(oglService, glyphCaches, ch);
-
-            final int texturePosX = texturePosX(bitmap, ch);
-            final int texturePosY = texturePosY(bitmap, ch);
+            final Bitmap bitmap = loadBitmap(fontRenderContext, glyphCaches, ch);
             final int italics = (style & Font.ITALIC) != 0 ? 1 : 0; // TODO
 
             final float scaleFactor = ((float) defaultFontSize() / bitmap.gridCellWidth) * ((float) defaultFontSize() / (size * MINECRAFT_SCALE_FACTOR));
@@ -113,14 +109,20 @@ public abstract class BaseBitmapFont implements FontInternal, Constants
             final Glyph glyph = new Glyph();
             glyph.stringIndex = i;
 
-            glyph.texture = new GlyphTexture();
-            glyph.texture.textureName = bitmap.textureName;
-            glyph.texture.width = glyphWidth - glyphRenderBorder();
-            glyph.texture.height = bitmap.gridCellHeight - glyphRenderBorder();
-            glyph.texture.u1 = (float) texturePosX / bitmap.width;
-            glyph.texture.v1 = (float) texturePosY / bitmap.height;
-            glyph.texture.u2 = ((float) texturePosX + glyphWidth - glyphRenderBorder()) / bitmap.width;
-            glyph.texture.v2 = ((float) texturePosY + bitmap.gridCellHeight - glyphRenderBorder()) / bitmap.height;
+            fontRenderContext.runIfGraphicsContextCurrent(oglService ->
+            {
+                final int texturePosX = texturePosX(bitmap, ch);
+                final int texturePosY = texturePosY(bitmap, ch);
+
+                glyph.texture = new GlyphTexture();
+                glyph.texture.textureName = bitmap.textureName;
+                glyph.texture.width = glyphWidth - glyphRenderBorder();
+                glyph.texture.height = bitmap.gridCellHeight - glyphRenderBorder();
+                glyph.texture.u1 = (float) texturePosX / bitmap.width;
+                glyph.texture.v1 = (float) texturePosY / bitmap.height;
+                glyph.texture.u2 = ((float) texturePosX + glyphWidth - glyphRenderBorder()) / bitmap.width;
+                glyph.texture.v2 = ((float) texturePosY + bitmap.gridCellHeight - glyphRenderBorder()) / bitmap.height;
+            });
 
             glyph.textureScale = scaleFactor;
             glyph.x = advance + (newAdvance - advance);

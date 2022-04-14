@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  * Copyright (C) 2012 Wojciech Stryjewski <thvortex@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@ interface FontInternal extends Font
      * Allocate new Glyph objects and add them to the glyph list. This sequence of Glyphs represents a portion of the
      * string where all glyphs run contiguously in either LTR or RTL and come from the same physical/logical font.
      *
-     * @param oglService service used to make OpenGL calls
+     * @param fontRenderContext service used to make OpenGL calls, if present
      * @param glyphCaches cache needed for creating GlyphVectors and retrieving glyph texture coordinates
      * @param glyphList all newly created Glyph objects are added to this list
      * @param text the string to layout
@@ -80,7 +80,7 @@ interface FontInternal extends Font
      *
      * @todo need to adjust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
-    float layoutFont(OglService oglService,
+    float layoutFont(FontRenderContext fontRenderContext,
                      GlyphCaches glyphCaches,
                      List<Glyph> glyphList,
                      char[] text, int start, int limit, int layoutFlags, float advance);

@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,14 +28,14 @@ class GlyphCaches
     private final BitmapAsciiFontCache bitmapAsciiFontCache;
     private final BitmapUnifontPageCache bitmapUnifontPageCache;
 
-    public GlyphCaches(OglService oglService,
+    public GlyphCaches(FontRenderContext fontRenderContext,
                        boolean createOpenTypeGlyphCache,
                        boolean createBitmapAsciiFontCache,
                        boolean createBitmapUnifontPageCache)
     {
-        this.openTypeGlyphCache = createOpenTypeGlyphCache ? new OpenTypeGlyphCache(oglService) : null;
-        this.bitmapAsciiFontCache = createBitmapAsciiFontCache ? new BitmapAsciiFontCache(oglService) : null;
-        this.bitmapUnifontPageCache = createBitmapUnifontPageCache ? new BitmapUnifontPageCache(oglService) : null;
+        this.openTypeGlyphCache = createOpenTypeGlyphCache ? new OpenTypeGlyphCache(fontRenderContext) : null;
+        this.bitmapAsciiFontCache = createBitmapAsciiFontCache ? new BitmapAsciiFontCache(fontRenderContext) : null;
+        this.bitmapUnifontPageCache = createBitmapUnifontPageCache ? new BitmapUnifontPageCache(fontRenderContext) : null;
     }
 
     public void setAntiAlias(boolean antiAlias)
