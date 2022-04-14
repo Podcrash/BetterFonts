@@ -25,6 +25,11 @@ import java.util.List;
 public interface BetterFontDescriptor
 {
 
+    static BetterFontDescriptorBuilder builder()
+    {
+        return new BetterFontDescriptorBuilderImpl(FontFactoryImpl.INSTANCE);
+    }
+
     static BetterFontDescriptor create(BetterFont... fonts)
     {
         return new CompositeFont(fonts);

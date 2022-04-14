@@ -27,6 +27,11 @@ public interface BetterFontRenderer extends BetterFontMetrics, Constants
 
     void setAntiAlias(boolean antiAlias);
 
+    static BetterFontRenderer create(BetterFontRenderContext fontRenderContext, int[] colors, BetterFontDescriptor font)
+    {
+        return new BetterFontRendererImpl(fontRenderContext, colors, font.getFonts(), true);
+    }
+
     default float drawString(String text, float startX, float startY, int initialColor)
     {
         return drawString(text, startX, startY, initialColor, false);
