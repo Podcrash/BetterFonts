@@ -22,7 +22,7 @@ package betterfonts;
 import java.util.ArrayList;
 import java.util.List;
 
-class FontMetricsImpl implements FontMetrics
+class BetterFontMetricsImpl implements BetterFontMetrics
 {
     /** Cache used to lookup which fonts to use for rendering */
     protected final FontCache fontCache;
@@ -33,12 +33,12 @@ class FontMetricsImpl implements FontMetrics
     /** Caches needed for creating GlyphVectors and retrieving glyph texture coordinates. */
     protected final GlyphCaches glyphCaches;
 
-    public FontMetricsImpl(List<? extends Font> fonts)
+    public BetterFontMetricsImpl(List<? extends BetterFont> fonts)
     {
         this(new NoContextOglService(), fonts);
     }
 
-    protected FontMetricsImpl(FontRenderContext fontRenderContext, List<? extends Font> fonts)
+    protected BetterFontMetricsImpl(BetterFontRenderContext fontRenderContext, List<? extends BetterFont> fonts)
     {
         this.glyphCaches = new GlyphCaches(
                 fontRenderContext,

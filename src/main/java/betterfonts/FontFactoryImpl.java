@@ -43,12 +43,12 @@ class FontFactoryImpl implements FontFactory
     }
 
     @Override
-    public List<Font> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts)
+    public List<BetterFont> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts)
     {
         final GraphicsEnvironment graphicsEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
         graphicsEnv.preferLocaleFonts();
         /* Use Java's logical font as the default initial font if user does not override it */
-        final java.awt.Font javaLogicalFont = new java.awt.Font(java.awt.Font.SANS_SERIF, Font.PLAIN, 1);
+        final java.awt.Font javaLogicalFont = new java.awt.Font(java.awt.Font.SANS_SERIF, BetterFont.PLAIN, 1);
         return Stream
                 .concat(Stream.of(javaLogicalFont),
                         Arrays.stream(graphicsEnv.getAllFonts()).filter(font -> !font.equals(javaLogicalFont)))
@@ -57,33 +57,33 @@ class FontFactoryImpl implements FontFactory
     }
 
     @Override
-    public Font createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    public BetterFont createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         return ((AwtBuilderImpl) openTypeFont.apply(new AwtBuilderImpl(name))).getFont();
     }
 
     @Override
-    public Font createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    public BetterFont createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         return createAwtFont(is, java.awt.Font.TRUETYPE_FONT, openTypeFont);
     }
 
     @Override
-    public Font createAwtFont(Supplier<InputStream> is, int fontFormat, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    public BetterFont createAwtFont(Supplier<InputStream> is, int fontFormat, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         return ((AwtBuilderImpl) openTypeFont.apply(new AwtBuilderImpl(is, fontFormat))).getFont();
     }
 
     @Override
-    public Font createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size)
+    public BetterFont createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size)
     {
-        return new BitmapAsciiFont(bitmap, name, Font.PLAIN, size);
+        return new BitmapAsciiFont(bitmap, name, BetterFont.PLAIN, size);
     }
 
     @Override
-    public Font createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size)
+    public BetterFont createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size)
     {
-        return new BitmapUnifont(glyphSizes, pageSupplier, name, Font.PLAIN, size);
+        return new BitmapUnifont(glyphSizes, pageSupplier, name, BetterFont.PLAIN, size);
     }
 
     private static class AwtBuilderImpl implements AwtBuilder<AwtBuilderImpl, AwtBuilderImpl>, AwtBuilderEnd<AwtBuilderImpl>
@@ -94,7 +94,7 @@ class FontFactoryImpl implements FontFactory
         private final Integer inputStreamFormat;
 
         private int size;
-        private Font.Baseline baseline = Font.Baseline.MINECRAFT;
+        private BetterFont.Baseline baseline = BetterFont.Baseline.MINECRAFT;
         private float customBaseline;
 
         private Float weight;
@@ -177,7 +177,7 @@ class FontFactoryImpl implements FontFactory
         }
 
         @Override
-        public AwtBuilderImpl withBaseline(Font.Baseline baseline)
+        public AwtBuilderImpl withBaseline(BetterFont.Baseline baseline)
         {
             this.baseline = baseline;
             return this;
@@ -212,17 +212,17 @@ class FontFactoryImpl implements FontFactory
             final java.awt.Font font;
             if(this.font != null)
             {
-                font = this.font.deriveFont(Font.PLAIN, size);
+                font = this.font.deriveFont(BetterFont.PLAIN, size);
             }
             else if(name != null)
             {
-                font = new java.awt.Font(name, Font.PLAIN, size);
+                font = new java.awt.Font(name, BetterFont.PLAIN, size);
             }
             else if(inputStream != null && inputStreamFormat != null)
             {
                 try(InputStream is = this.inputStream.get())
                 {
-                    font = java.awt.Font.createFont(inputStreamFormat, is).deriveFont(Font.PLAIN, size);
+                    font = java.awt.Font.createFont(inputStreamFormat, is).deriveFont(BetterFont.PLAIN, size);
                 }
                 catch(FontFormatException ex)
                 {
@@ -253,7 +253,7 @@ class FontFactoryImpl implements FontFactory
                     font.deriveFont(attributes);
         }
 
-        public FontInternal getFont()
+        public BetterFontInternal getFont()
         {
             if(baseline == null)
                 return new OpenTypeFont(getAwtFont(size), customBaseline);

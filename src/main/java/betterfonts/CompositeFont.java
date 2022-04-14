@@ -21,11 +21,11 @@ package betterfonts;
 
 import java.util.*;
 
-class CompositeFont extends BaseFontDescriptor implements FontDescriptor
+class CompositeFont extends BaseFontDescriptor implements BetterFontDescriptor
 {
 
-    private final List<FontInternal> fonts;
-    private final List<FontInternal> unmodifiableFonts;
+    private final List<BetterFontInternal> fonts;
+    private final List<BetterFontInternal> unmodifiableFonts;
 
     public CompositeFont()
     {
@@ -33,21 +33,21 @@ class CompositeFont extends BaseFontDescriptor implements FontDescriptor
         this.unmodifiableFonts = Collections.unmodifiableList(fonts);
     }
 
-    public CompositeFont(Font font)
+    public CompositeFont(BetterFont font)
     {
         this.fonts = new ArrayList<>();
         addFont(font);
         this.unmodifiableFonts = Collections.unmodifiableList(fonts);
     }
 
-    public CompositeFont(Font... fonts)
+    public CompositeFont(BetterFont... fonts)
     {
         this.fonts = new ArrayList<>();
         addFonts(fonts);
         this.unmodifiableFonts = Collections.unmodifiableList(this.fonts);
     }
 
-    public CompositeFont(Collection<? extends Font> fonts)
+    public CompositeFont(Collection<? extends BetterFont> fonts)
     {
         this.fonts = new ArrayList<>();
         addFonts(fonts);
@@ -55,28 +55,28 @@ class CompositeFont extends BaseFontDescriptor implements FontDescriptor
     }
 
     @Override
-    public List<FontInternal> getFonts()
+    public List<BetterFontInternal> getFonts()
     {
         return unmodifiableFonts;
     }
 
-    void addFont(FontDescriptor font)
+    void addFont(BetterFontDescriptor font)
     {
-        if(font instanceof Font)
+        if(font instanceof BetterFont)
         {
-            fonts.add(FontInternal.cast((Font) font));
+            fonts.add(BetterFontInternal.cast((BetterFont) font));
             return;
         }
 
         addFonts(font.getFonts());
     }
 
-    void addFonts(Font... fonts)
+    void addFonts(BetterFont... fonts)
     {
         Arrays.stream(fonts).forEach(this::addFont);
     }
 
-    void addFonts(Collection<? extends Font> fonts)
+    void addFonts(Collection<? extends BetterFont> fonts)
     {
         fonts.forEach(this::addFont);
     }

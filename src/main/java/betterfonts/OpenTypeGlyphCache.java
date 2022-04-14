@@ -89,7 +89,7 @@ class OpenTypeGlyphCache
     /** If true, then enable anti-aliasing when rendering the font glyph */
     private boolean antiAliasEnabled = false;
 
-    private final betterfonts.FontRenderContext betterfontsRenderContext;
+    private final BetterFontRenderContext betterfontsRenderContext;
 
     /** Temporary image for rendering a string to and then extracting the glyph images from. */
     private BufferedImage stringImage;
@@ -159,7 +159,7 @@ class OpenTypeGlyphCache
     private int cacheLineHeight = 0;
 
     /** A single instance of GlyphCache is allocated for internal use by the StringCache class. */
-    public OpenTypeGlyphCache(betterfonts.FontRenderContext fontRenderContext)
+    public OpenTypeGlyphCache(BetterFontRenderContext fontRenderContext)
     {
         this.betterfontsRenderContext = fontRenderContext;
 

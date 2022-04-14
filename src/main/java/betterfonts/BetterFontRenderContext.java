@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface FontRenderContext
+public interface BetterFontRenderContext
 {
 
     boolean isGraphicsContext();

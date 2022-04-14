@@ -32,7 +32,7 @@ import java.util.function.Function;
  * For example in Minecraft 1.8, it could be implemented using GlStatManager and Tessellator instead of raw gl calls.
  * @author Ferlo
  */
-public interface OglService extends FontRenderContext
+public interface OglService extends BetterFontRenderContext
 {
     @Override
     default boolean isGraphicsContext()

@@ -34,7 +34,7 @@ class BitmapUnifontPageCache
     private static final int GRID_COLS = 16;
     private static final int CHARACTERS_PER_PAGE = GRID_ROWS * GRID_COLS;
 
-    private final FontRenderContext fontRenderContext;
+    private final BetterFontRenderContext fontRenderContext;
 
     /**
      * A cache of all unicode pages that have at least one glyph rendered in a texture.
@@ -44,7 +44,7 @@ class BitmapUnifontPageCache
      */
     private final Map<Long, BaseBitmapFont.Bitmap> pageCache = new HashMap<>();
 
-    public BitmapUnifontPageCache(FontRenderContext fontRenderContext)
+    public BitmapUnifontPageCache(BetterFontRenderContext fontRenderContext)
     {
         this.fontRenderContext = fontRenderContext;
     }

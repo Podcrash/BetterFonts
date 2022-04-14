@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  */
 class StringCache
 {
-    private final FontRenderContext fontRenderContext;
+    private final BetterFontRenderContext fontRenderContext;
 
     /** Service used to make OpenGL calls */
     private final FontCache fontCache;
@@ -275,7 +275,7 @@ class StringCache
         }
     }
 
-    public StringCache(FontRenderContext fontRenderContext, FontCache fontCache, GlyphCaches glyphCaches)
+    public StringCache(BetterFontRenderContext fontRenderContext, FontCache fontCache, GlyphCaches glyphCaches)
     {
         this.fontRenderContext = fontRenderContext;
         this.fontCache = fontCache;
@@ -307,10 +307,10 @@ class StringCache
     {
         /* Need to cache each font style combination; the digitGlyphsReady = false disabled the normal glyph substitution mechanism */
         digitGlyphsReady = false;
-        digitGlyphs[Font.PLAIN] = cacheString("0123456789").glyphs;
-        digitGlyphs[Font.BOLD] = cacheString("\u00A7l0123456789").glyphs; // TODO
-        digitGlyphs[Font.ITALIC] = cacheString("\u00A7o0123456789").glyphs;
-        digitGlyphs[Font.BOLD | Font.ITALIC] = cacheString("\u00A7l\u00A7o0123456789").glyphs;
+        digitGlyphs[BetterFont.PLAIN] = cacheString("0123456789").glyphs;
+        digitGlyphs[BetterFont.BOLD] = cacheString("\u00A7l0123456789").glyphs; // TODO
+        digitGlyphs[BetterFont.ITALIC] = cacheString("\u00A7o0123456789").glyphs;
+        digitGlyphs[BetterFont.BOLD | BetterFont.ITALIC] = cacheString("\u00A7l\u00A7o0123456789").glyphs;
         digitGlyphsReady = true;
     }
 
@@ -382,7 +382,7 @@ class StringCache
 
             /* Do some post-processing on each Glyph object */
             int colorIndex = 0, shift = 0;
-            byte colorCode = -1, fontStyle = Font.PLAIN, renderStyle = 0;
+            byte colorCode = -1, fontStyle = BetterFont.PLAIN, renderStyle = 0;
             for(int glyphIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++)
             {
                 Glyph glyph = entry.glyphs[glyphIndex];
@@ -474,7 +474,7 @@ class StringCache
         List<ColorCode> colorList = new ArrayList<>();
         int start = 0, shift = 0, next;
 
-        byte fontStyle = Font.PLAIN;
+        byte fontStyle = BetterFont.PLAIN;
         byte renderStyle = 0;
         byte colorCode = -1;
 
@@ -499,7 +499,7 @@ class StringCache
 
                 /* Bold style */
                 case 17:
-                    fontStyle |= Font.BOLD;
+                    fontStyle |= BetterFont.BOLD;
                     break;
 
                 /* Strikethrough style */
@@ -516,12 +516,12 @@ class StringCache
 
                 /* Italic style */
                 case 20:
-                    fontStyle |= Font.ITALIC;
+                    fontStyle |= BetterFont.ITALIC;
                     break;
 
                 /* Plain style */
                 case 21:
-                    fontStyle = Font.PLAIN;
+                    fontStyle = BetterFont.PLAIN;
                     renderStyle = 0;
                     colorCode = -1; // This may be a bug in Minecraft's original FontRenderer
                     break;
@@ -531,7 +531,7 @@ class StringCache
                     if(code >= 0 /* && code <= 15 */)
                     {
                         colorCode = (byte) code;
-                        fontStyle = Font.PLAIN; // This may be a bug in Minecraft's original FontRenderer
+                        fontStyle = BetterFont.PLAIN; // This may be a bug in Minecraft's original FontRenderer
                         renderStyle = 0;        // This may be a bug in Minecraft's original FontRenderer
                     }
                     break;
@@ -582,7 +582,7 @@ class StringCache
             /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
             if(bidi.isRightToLeft())
             {
-                return layoutStyle(glyphList, text, start, limit, FontInternal.LAYOUT_RIGHT_TO_LEFT, advance, colors);
+                return layoutStyle(glyphList, text, start, limit, BetterFontInternal.LAYOUT_RIGHT_TO_LEFT, advance, colors);
             }
 
             /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
@@ -610,7 +610,7 @@ class StringCache
                     int logicalIndex = ranges[visualIndex];
 
                     /* An odd numbered level indicates right-to-left ordering */
-                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? FontInternal.LAYOUT_RIGHT_TO_LEFT : FontInternal.LAYOUT_LEFT_TO_RIGHT;
+                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? BetterFontInternal.LAYOUT_RIGHT_TO_LEFT : BetterFontInternal.LAYOUT_LEFT_TO_RIGHT;
                     advance = layoutStyle(glyphList, text, start + bidi.getRunStart(logicalIndex), start + bidi.getRunLimit(logicalIndex),
                         layoutFlag, advance, colors);
                 }
@@ -622,13 +622,13 @@ class StringCache
         /* If text is entirely left-to-right, then insert an EntryText node for the entire string */
         else
         {
-            return layoutStyle(glyphList, text, start, limit, FontInternal.LAYOUT_LEFT_TO_RIGHT, advance, colors);
+            return layoutStyle(glyphList, text, start, limit, BetterFontInternal.LAYOUT_LEFT_TO_RIGHT, advance, colors);
         }
     }
 
     private float layoutStyle(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, ColorCode[] colors)
     {
-        int currentFontStyle = Font.PLAIN;
+        int currentFontStyle = BetterFont.PLAIN;
 
         /* Find ColorCode object with stripIndex <= start; that will have the font style in effect at the beginning of this text run */
         int colorIndex = Arrays.binarySearch(colors, start);
@@ -721,7 +721,7 @@ class StringCache
         while(start < limit)
         {
             final AtomicInteger limitPtr = new AtomicInteger(limit);
-            FontInternal font = fontCache.lookupFont(text, start, limitPtr, style);
+            BetterFontInternal font = fontCache.lookupFont(text, start, limitPtr, style);
             /* limitPtr is updated with the limit at which this Font should stop rendering */
             advance = font.layoutFont(fontRenderContext, glyphCaches, glyphList, text, start, limitPtr.get(), layoutFlags, advance);
             start = limitPtr.get();

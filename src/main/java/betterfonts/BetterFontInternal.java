@@ -22,7 +22,7 @@ package betterfonts;
 
 import java.util.List;
 
-interface FontInternal extends Font
+interface BetterFontInternal extends BetterFont
 {
     /** A flag indicating that text is left-to-right as determined by Bidi analysis. */
     int LAYOUT_LEFT_TO_RIGHT = 0;
@@ -30,12 +30,12 @@ interface FontInternal extends Font
     /** A flag indicating that text is right-to-left as determined by Bidi analysis. */
     int LAYOUT_RIGHT_TO_LEFT = 1;
 
-    static FontInternal cast(Font font) {
-        if(!(font instanceof FontInternal))
+    static BetterFontInternal cast(BetterFont font) {
+        if(!(font instanceof BetterFontInternal))
             throw new AssertionError("" +
                     "All types need to implement FontInternal " +
                     "(instance: " + font + ", type: " + font.getClass() + ")");
-        return (FontInternal) font;
+        return (BetterFontInternal) font;
     }
 
     /**
@@ -80,17 +80,17 @@ interface FontInternal extends Font
      *
      * @todo need to adjust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
-    float layoutFont(FontRenderContext fontRenderContext,
+    float layoutFont(BetterFontRenderContext fontRenderContext,
                      GlyphCaches glyphCaches,
                      List<Glyph> glyphList,
                      char[] text, int start, int limit, int layoutFlags, float advance);
 
     @Override
-    default FontInternal deriveFont(int style)
+    default BetterFontInternal deriveFont(int style)
     {
         return deriveFont(style, getSize());
     }
 
     @Override
-    FontInternal deriveFont(int style, float size);
+    BetterFontInternal deriveFont(int style, float size);
 }

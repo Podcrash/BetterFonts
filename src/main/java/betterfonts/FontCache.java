@@ -32,16 +32,16 @@ class FontCache
      * This list will only have plain variation of a font, unlike fontCache which could have multiple entries
      * for the various styles (i.e. bold, italic, etc.) of a font.
      */
-    private final List<FontInternal> fonts;
-    private final List<Font> unmodifiableFonts;
+    private final List<BetterFontInternal> fonts;
+    private final List<BetterFont> unmodifiableFonts;
 
-    public FontCache(List<? extends Font> fonts)
+    public FontCache(List<? extends BetterFont> fonts)
     {
         if(fonts.isEmpty())
             throw new UnsupportedOperationException("The FontRenderer needs at least 1 font");
         this.fonts = fonts.stream()
                 .sequential()
-                .map(FontInternal::cast)
+                .map(BetterFontInternal::cast)
                 .collect(Collectors.toList());
         this.unmodifiableFonts = Collections.unmodifiableList(this.fonts);
     }
@@ -57,9 +57,9 @@ class FontCache
      * @param style a combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
      * @return an OpenType font capable of displaying at least the first character at the start position in text
      */
-    public FontInternal lookupFont(char[] text, int start, AtomicInteger limitPtr, int style)
+    public BetterFontInternal lookupFont(char[] text, int start, AtomicInteger limitPtr, int style)
     {
-        for(FontInternal font : fonts)
+        for(BetterFontInternal font : fonts)
         {
             final int newLimit = font.canDisplayUpTo(text, start, limitPtr.get());
             /* Only use the font if it can layout alla characters (-1) or at least the first character of the requested string range */
@@ -82,12 +82,12 @@ class FontCache
         }
 
         /* If no supported fonts found, use the default one (first in usedFonts) so it can draw its unknown character glyphs */
-        final FontInternal font = fonts.get(0);
+        final BetterFontInternal font = fonts.get(0);
         /* Return a font instance of the proper point size and style; usedFonts only 1pt sized plain style fonts */
         return font.deriveFont(style);
     }
 
-    public List<Font> getFonts()
+    public List<BetterFont> getFonts()
     {
         return unmodifiableFonts;
     }

@@ -28,7 +28,7 @@ class GlyphCaches
     private final BitmapAsciiFontCache bitmapAsciiFontCache;
     private final BitmapUnifontPageCache bitmapUnifontPageCache;
 
-    public GlyphCaches(FontRenderContext fontRenderContext,
+    public GlyphCaches(BetterFontRenderContext fontRenderContext,
                        boolean createOpenTypeGlyphCache,
                        boolean createBitmapAsciiFontCache,
                        boolean createBitmapUnifontPageCache)

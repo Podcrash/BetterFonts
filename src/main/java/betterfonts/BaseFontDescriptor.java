@@ -19,18 +19,18 @@
 
 package betterfonts;
 
-abstract class BaseFontDescriptor implements FontDescriptor
+abstract class BaseFontDescriptor implements BetterFontDescriptor
 {
     private final Object lock = new Object();
-    private volatile FontMetrics metrics;
+    private volatile BetterFontMetrics metrics;
 
     @Override
-    public FontMetrics getMetrics()
+    public BetterFontMetrics getMetrics()
     {
         if(metrics == null) {
             synchronized(lock) {
                 if(metrics == null)
-                    metrics = new FontMetricsImpl(getFonts());
+                    metrics = new BetterFontMetricsImpl(getFonts());
             }
         }
 

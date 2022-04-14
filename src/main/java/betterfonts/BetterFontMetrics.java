@@ -21,7 +21,7 @@ package betterfonts;
 
 import java.util.List;
 
-public interface FontMetrics extends Constants
+public interface BetterFontMetrics extends Constants
 {
 
     /**

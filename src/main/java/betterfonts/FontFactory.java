@@ -8,19 +8,19 @@ import java.util.function.Supplier;
 
 public interface FontFactory {
 
-    List<Font> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts);
+    List<BetterFont> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts);
 
-    Font createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
+    BetterFont createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
-    Font createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
+    BetterFont createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
-    Font createAwtFont(Supplier<InputStream> is,
-                       int fontFormat,
-                       Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
+    BetterFont createAwtFont(Supplier<InputStream> is,
+                             int fontFormat,
+                             Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont);
 
-    Font createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size);
+    BetterFont createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size);
 
-    Font createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size);
+    BetterFont createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size);
 
     interface AwtBuilder<R extends AwtBuilderEnd<R>, T extends AwtBuilder<R, T>> extends BetterFontConditionalClauses.ReturnDiffType<T, R>
     {
@@ -33,7 +33,7 @@ public interface FontFactory {
     {
         T withBaseline(float baseline);
 
-        T withBaseline(Font.Baseline baseline);
+        T withBaseline(BetterFont.Baseline baseline);
 
         T withWeight(float weight);
 

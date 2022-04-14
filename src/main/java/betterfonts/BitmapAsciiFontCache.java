@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 class BitmapAsciiFontCache
 {
 
-    private final FontRenderContext fontRenderContext;
+    private final BetterFontRenderContext fontRenderContext;
 
     /**
      * A cache of all font textures.
@@ -39,7 +39,7 @@ class BitmapAsciiFontCache
      */
     private final Map<Integer, BaseBitmapFont.Bitmap> bitmapCache = new HashMap<>();
 
-    public BitmapAsciiFontCache(FontRenderContext fontRenderContext)
+    public BitmapAsciiFontCache(BetterFontRenderContext fontRenderContext)
     {
         this.fontRenderContext = fontRenderContext;
     }

@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-class BetterFontRendererImpl extends FontMetricsImpl implements Constants, BetterFontRenderer
+class BetterFontRendererImpl extends BetterFontMetricsImpl implements Constants, BetterFontRenderer
 {
     /** Offset from the string's baseline as which to draw the underline (in pixels) */
     private static final float UNDERLINE_OFFSET = 1 * MINECRAFT_SCALE_FACTOR;
@@ -54,7 +54,7 @@ class BetterFontRendererImpl extends FontMetricsImpl implements Constants, Bette
         RANDOM_STYLE_CHARS = unsorted;
     }
 
-    private final FontRenderContext fontRenderContext;
+    private final BetterFontRenderContext fontRenderContext;
 
     /**
      * Color codes from original FontRender class. First 16 entries are the primary chat colors; second 16 are darker versions
@@ -78,7 +78,7 @@ class BetterFontRendererImpl extends FontMetricsImpl implements Constants, Bette
      * @param colors 32 element array of RGBA colors corresponding to the 16 text color codes followed by 16 darker version of the
      * color codes for use as drop shadows
      */
-    BetterFontRendererImpl(FontRenderContext fontRenderContext, int[] colors, List<? extends Font> fonts, boolean antiAlias)
+    BetterFontRendererImpl(BetterFontRenderContext fontRenderContext, int[] colors, List<? extends BetterFont> fonts, boolean antiAlias)
     {
         super(fontRenderContext, fonts);
 
@@ -97,7 +97,7 @@ class BetterFontRendererImpl extends FontMetricsImpl implements Constants, Bette
         invalidate();
     }
 
-    public List<Font> getFonts() {
+    public List<BetterFont> getFonts() {
         return fontCache.getFonts();
     }
 

@@ -117,7 +117,7 @@ class BitmapUnifont extends BaseBitmapFont
     }
 
     @Override
-    protected Bitmap loadBitmap(FontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch)
+    protected Bitmap loadBitmap(BetterFontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch)
     {
         return glyphCaches.ensureBitmapUnifontPageCache().loadPageTexture(id, pageSupplier, ch);
     }
@@ -171,7 +171,7 @@ class BitmapUnifont extends BaseBitmapFont
     }
 
     @Override
-    public FontInternal deriveFont(int style, float size)
+    public BetterFontInternal deriveFont(int style, float size)
     {
         return new BitmapUnifont(id, glyphSizes, pageSupplier, name, style, size);
     }

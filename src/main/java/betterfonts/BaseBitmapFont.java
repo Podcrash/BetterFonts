@@ -21,7 +21,7 @@ package betterfonts;
 
 import java.util.List;
 
-abstract class BaseBitmapFont extends BaseFontDescriptor implements FontInternal, Constants
+abstract class BaseBitmapFont extends BaseFontDescriptor implements BetterFontInternal, Constants
 {
     /** Style of this font */
     protected final int style;
@@ -64,7 +64,7 @@ abstract class BaseBitmapFont extends BaseFontDescriptor implements FontInternal
         return style;
     }
 
-    protected abstract Bitmap loadBitmap(FontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch);
+    protected abstract Bitmap loadBitmap(BetterFontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch);
 
     protected abstract int texturePosX(Bitmap bitmap, char ch);
 
@@ -81,7 +81,7 @@ abstract class BaseBitmapFont extends BaseFontDescriptor implements FontInternal
     protected abstract int glyphGap();
 
     @Override
-    public float layoutFont(FontRenderContext fontRenderContext,
+    public float layoutFont(BetterFontRenderContext fontRenderContext,
                             GlyphCaches glyphCaches,
                             List<Glyph> glyphList,
                             char[] text, int start, int limit, int layoutFlags, float advance)
@@ -97,7 +97,7 @@ abstract class BaseBitmapFont extends BaseFontDescriptor implements FontInternal
             }
 
             final Bitmap bitmap = loadBitmap(fontRenderContext, glyphCaches, ch);
-            final int italics = (style & Font.ITALIC) != 0 ? 1 : 0; // TODO
+            final int italics = (style & BetterFont.ITALIC) != 0 ? 1 : 0; // TODO
 
             final float scaleFactor = ((float) defaultFontSize() / bitmap.gridCellWidth) * ((float) defaultFontSize() / (size * MINECRAFT_SCALE_FACTOR));
             final int glyphWidth = getGlyphWidth(ch);
@@ -133,7 +133,7 @@ abstract class BaseBitmapFont extends BaseFontDescriptor implements FontInternal
             glyphList.add(glyph);
 
             newAdvance += glyph.advance;
-            if((style & Font.BOLD) != 0) // TODO
+            if((style & BetterFont.BOLD) != 0) // TODO
                 newAdvance += 1;
         }
 

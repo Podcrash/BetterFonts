@@ -180,7 +180,7 @@ class BitmapAsciiFont extends BaseBitmapFont
     }
 
     @Override
-    protected BaseBitmapFont.Bitmap loadBitmap(FontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch)
+    protected BaseBitmapFont.Bitmap loadBitmap(BetterFontRenderContext fontRenderContext, GlyphCaches glyphCaches, char ch)
     {
         return glyphCaches.ensureBitmapAsciiFontCache().loadBitmap(id, bitmap);
     }
@@ -234,7 +234,7 @@ class BitmapAsciiFont extends BaseBitmapFont
     }
 
     @Override
-    public FontInternal deriveFont(int style, float size)
+    public BetterFontInternal deriveFont(int style, float size)
     {
         return new BitmapAsciiFont(id, bitmap, glyphWidths, name, style, size);
     }

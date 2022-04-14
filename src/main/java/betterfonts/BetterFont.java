@@ -1,7 +1,7 @@
 /*
  * Minecraft OpenType Font Support Mod
  *
- * Copyright (C) 2021 Podcrash Ltd
+ * Copyright (C) 2021-2022 Podcrash Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,7 +30,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
-public interface Font extends FontDescriptor
+public interface BetterFont extends BetterFontDescriptor
 {
     /** The plain style constant */
     int PLAIN = java.awt.Font.PLAIN;
@@ -55,39 +55,39 @@ public interface Font extends FontDescriptor
         COMMON_CHARS
     }
 
-    static List<Font> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts)
+    static List<BetterFont> createSystemFonts(Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFonts)
     {
         return FontFactoryImpl.INSTANCE.createSystemFonts(openTypeFonts);
     }
 
-    static Font createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    static BetterFont createOpenTypeFont(String name, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         return FontFactoryImpl.INSTANCE.createOpenTypeFont(name, openTypeFont);
     }
 
-    static Font createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
+    static BetterFont createOpenTypeFont(Supplier<InputStream> is, Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont)
     {
         return FontFactoryImpl.INSTANCE.createOpenTypeFont(is, openTypeFont);
     }
 
-    static Font createAwtFont(Supplier<InputStream> is,
-                              int fontFormat,
-                              Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont) {
+    static BetterFont createAwtFont(Supplier<InputStream> is,
+                                    int fontFormat,
+                                    Function<AwtBuilder<?, ?>, AwtBuilderEnd<?>> openTypeFont) {
         return FontFactoryImpl.INSTANCE.createAwtFont(is, fontFormat, openTypeFont);
     }
 
-    static Font createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size)
+    static BetterFont createBitmapAsciiFont(String name, Supplier<InputStream> bitmap, int size)
     {
         return FontFactoryImpl.INSTANCE.createBitmapAsciiFont(name, bitmap, size);
     }
 
-    static Font createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size)
+    static BetterFont createBitmapUnifont(String name, Supplier<InputStream> glyphSizes, IntFunction<InputStream> pageSupplier, int size)
     {
         return FontFactoryImpl.INSTANCE.createBitmapUnifont(name, glyphSizes, pageSupplier, size);
     }
 
     @Override
-    default List<? extends Font> getFonts()
+    default List<? extends BetterFont> getFonts()
     {
         return Collections.singletonList(this);
     }
@@ -119,7 +119,7 @@ public interface Font extends FontDescriptor
      * @param style the style for the new Font
      * @return a new Font object.
      */
-    default Font deriveFont(int style) {
+    default BetterFont deriveFont(int style) {
         return deriveFont(style, getSize());
     }
 
@@ -130,5 +130,5 @@ public interface Font extends FontDescriptor
      * @param size the size for the new Font
      * @return a new Font object.
      */
-    Font deriveFont(int style, float size);
+    BetterFont deriveFont(int style, float size);
 }

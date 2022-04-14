@@ -28,16 +28,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-class OpenTypeFont extends BaseFontDescriptor implements FontInternal, Constants
+class OpenTypeFont extends BaseFontDescriptor implements BetterFontInternal, Constants
 {
     /** Actual underlying java Font */
     private final java.awt.Font font;
 
-    private final Font.Baseline baseline;
+    private final BetterFont.Baseline baseline;
     private final float customBaseline;
     private Float commonCharsBaseline;
 
-    public OpenTypeFont(java.awt.Font font, Font.Baseline baseline)
+    public OpenTypeFont(java.awt.Font font, BetterFont.Baseline baseline)
     {
         this(font, Objects.requireNonNull(baseline, "Baseline can't be null"), -1);
     }
@@ -48,7 +48,7 @@ class OpenTypeFont extends BaseFontDescriptor implements FontInternal, Constants
     }
 
     private OpenTypeFont(java.awt.Font font,
-                         Font.Baseline baseline,
+                         BetterFont.Baseline baseline,
                          float customBaseline)
     {
         this.font = font;
@@ -61,7 +61,7 @@ class OpenTypeFont extends BaseFontDescriptor implements FontInternal, Constants
         if(commonCharsBaseline == null)
         {
             /* Lay down all the common characters to calculate their positioning in a string */
-            final GlyphVector vector = glyphCache.layoutGlyphVector(font, COMMON_CHARS.toCharArray(), 0, COMMON_CHARS.length(), FontInternal.LAYOUT_LEFT_TO_RIGHT);
+            final GlyphVector vector = glyphCache.layoutGlyphVector(font, COMMON_CHARS.toCharArray(), 0, COMMON_CHARS.length(), BetterFontInternal.LAYOUT_LEFT_TO_RIGHT);
             /*
              * Find the minimum y value of the laid out string.
              * Since AWT lays out from the baseline, that will be the distance from the baseline, so we just need to invert it
@@ -115,7 +115,7 @@ class OpenTypeFont extends BaseFontDescriptor implements FontInternal, Constants
     }
 
     @Override
-    public float layoutFont(FontRenderContext fontRenderContext,
+    public float layoutFont(BetterFontRenderContext fontRenderContext,
                             GlyphCaches glyphCaches,
                             List<Glyph> glyphList,
                             char[] text, int start, int limit, int layoutFlags, float advance)
@@ -199,7 +199,7 @@ class OpenTypeFont extends BaseFontDescriptor implements FontInternal, Constants
     }
 
     @Override
-    public FontInternal deriveFont(int style, float size)
+    public BetterFontInternal deriveFont(int style, float size)
     {
         final java.awt.Font derived = font.getAttributes().get(TextAttribute.WEIGHT) == null && font.getAttributes().get(TextAttribute.POSTURE) == null ?
                 font.deriveFont(style, size) :

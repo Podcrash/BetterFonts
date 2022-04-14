@@ -22,7 +22,7 @@ package betterfonts;
 import java.awt.geom.Rectangle2D;
 
 @SuppressWarnings("unused")
-public interface BetterFontRenderer extends FontMetrics, Constants
+public interface BetterFontRenderer extends BetterFontMetrics, Constants
 {
 
     void setAntiAlias(boolean antiAlias);
