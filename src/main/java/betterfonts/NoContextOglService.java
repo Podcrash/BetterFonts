@@ -48,19 +48,37 @@ class NoContextOglService implements OglService
     }
 
     @Override
-    public boolean glIsEnabled(int cap)
+    public void glEnableBlend()
     {
         throw missingContextException();
     }
 
     @Override
-    public void glEnable(int cap)
+    public void glDisableBlend()
     {
         throw missingContextException();
     }
 
     @Override
-    public void glDisable(int cap)
+    public boolean glIsBlendEnabled()
+    {
+        throw missingContextException();
+    }
+
+    @Override
+    public void glEnableTexture2D()
+    {
+        throw missingContextException();
+    }
+
+    @Override
+    public void glDisableTexture2D()
+    {
+        throw missingContextException();
+    }
+
+    @Override
+    public void glEnableAlpha()
     {
         throw missingContextException();
     }

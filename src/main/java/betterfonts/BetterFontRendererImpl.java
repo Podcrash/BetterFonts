@@ -104,7 +104,7 @@ class BetterFontRendererImpl extends BetterFontMetricsImpl implements Constants,
     @Override
     public float drawString(String text, float startX, float startY, int initialColor, boolean dropShadow)
     {
-        fontRenderContext.ensureGraphicsContextCurrent().glEnable(GL11.GL_ALPHA);
+        fontRenderContext.ensureGraphicsContextCurrent().glEnableAlpha();
 
         if(dropShadow)
         {
@@ -211,7 +211,7 @@ class BetterFontRendererImpl extends BetterFontMetricsImpl implements Constants,
         oglService.glColor3f((color >> 16 & 0xff) / 255f, (color >> 8 & 0xff) / 255f, (color & 0xff) / 255f);
 
         /* Save the blending state */
-        boolean wasBlendEnabled = oglService.glIsEnabled(GL11.GL_BLEND);
+        boolean wasBlendEnabled = oglService.glIsBlendEnabled();
         /* If the GL_BLEND is not enabled, ignore the alpha value. This fixes the problem with the scoreboard */
         if(!wasBlendEnabled)
             initialColor = 0xFF000000 | initialColor;
@@ -223,7 +223,7 @@ class BetterFontRendererImpl extends BetterFontMetricsImpl implements Constants,
          */
         if(antiAliasEnabled)
         {
-            oglService.glEnable(GL11.GL_BLEND);
+            oglService.glEnableBlend();
             oglService.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
 
@@ -330,7 +330,7 @@ class BetterFontRendererImpl extends BetterFontMetricsImpl implements Constants,
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             color = initialColor;
-            oglService.glDisable(GL11.GL_TEXTURE_2D);
+            oglService.glDisableTexture2D();
             tessellator.startDrawingQuads();
             tessellator.setColorRGBA(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >> 24 & 0xff);
 
@@ -368,11 +368,11 @@ class BetterFontRendererImpl extends BetterFontMetricsImpl implements Constants,
 
             /* Finish drawing the last strikethrough/underline segments */
             tessellator.draw();
-            oglService.glEnable(GL11.GL_TEXTURE_2D);
+            oglService.glEnableTexture2D();
         }
 
         if(antiAliasEnabled && !wasBlendEnabled)
-            oglService.glDisable(GL11.GL_BLEND);
+            oglService.glDisableBlend();
 
         oglService.glTranslatef(-startX, -startY, 0);
 

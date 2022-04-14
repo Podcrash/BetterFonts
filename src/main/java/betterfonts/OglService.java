@@ -72,11 +72,19 @@ public interface OglService extends BetterFontRenderContext
 
     Tessellator tessellator();
 
-    boolean glIsEnabled(int cap);
+    void glEnableBlend();
 
-    void glEnable(int cap);
+    void glDisableBlend();
 
-    void glDisable(int cap);
+    boolean glIsBlendEnabled();
+
+    void glBlendFunc(int sFactor, int dFactor);
+
+    void glEnableTexture2D();
+
+    void glDisableTexture2D();
+
+    void glEnableAlpha();
 
     void glColor3f(float red, float green, float blue);
 
@@ -91,8 +99,6 @@ public interface OglService extends BetterFontRenderContext
     void glTexParameterf(int target, int pName, float param);
 
     void glTexEnvi(int target, int pName, int param);
-
-    void glBlendFunc(int sFactor, int dFactor);
 
     int glGenTextures();
 
