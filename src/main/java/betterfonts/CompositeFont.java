@@ -80,4 +80,27 @@ class CompositeFont extends BaseFontDescriptor implements BetterFontDescriptor
     {
         fonts.forEach(this::addFont);
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
+        CompositeFont that = (CompositeFont) o;
+        return fonts.equals(that.fonts);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(fonts);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "CompositeFont{" +
+                "fonts=" + fonts +
+                '}';
+    }
 }

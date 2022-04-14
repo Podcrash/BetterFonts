@@ -36,4 +36,10 @@ abstract class BaseFontDescriptor implements BetterFontDescriptor
 
         return metrics;
     }
+
+    @Override
+    public abstract int hashCode();
+
+    @Override
+    public abstract boolean equals(Object obj);
 }

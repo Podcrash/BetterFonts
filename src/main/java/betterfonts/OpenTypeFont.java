@@ -209,22 +209,27 @@ class OpenTypeFont extends BaseFontDescriptor implements BetterFontInternal, Con
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(Object o)
+    {
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
         OpenTypeFont that = (OpenTypeFont) o;
-        return font.equals(that.font);
+        return Float.compare(that.customBaseline, customBaseline) == 0 && font.equals(that.font) && baseline == that.baseline;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(font);
+    public int hashCode()
+    {
+        return Objects.hash(font, baseline, customBaseline);
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "OpenTypeFont{" +
                 "font=" + font +
+                ", baseline=" + baseline +
+                ", customBaseline=" + customBaseline +
                 '}';
     }
 }

@@ -22,6 +22,7 @@ package betterfonts;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -174,5 +175,31 @@ class BitmapUnifont extends BaseBitmapFont
     public BetterFontInternal deriveFont(int style, float size)
     {
         return new BitmapUnifont(id, glyphSizes, pageSupplier, name, style, size);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
+        BitmapUnifont that = (BitmapUnifont) o;
+        return id == that.id && name.equals(that.name) && style == that.style && size == that.size;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(id, name, style, size);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "BitmapUnifont{" +
+                "style=" + style +
+                ", size=" + size +
+                ", id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
